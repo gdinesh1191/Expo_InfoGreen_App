@@ -142,8 +142,9 @@ export default function Print({ route }: any) {
 
     const shareImage = async (imageUri: string, number?: string) => {
         try {
-            const shareOptions:any = {
-                url: `content://${imageUri}`,
+            const shareOptions: any = {
+                // `imageUri` already contains a valid scheme (file:// or content://)
+                url: imageUri,
                 type: 'image/jpeg',
                 title: 'Share Image',
               };
@@ -165,8 +166,9 @@ export default function Print({ route }: any) {
 
         try {
             console.log('number', number);
-            const shareOptions:any = {
-                url: `content://${pdfPath}`,
+            const shareOptions: any = {
+                // `pdfPath` already contains a valid scheme (file:// or content://)
+                url: pdfPath,
                 type: 'application/pdf',
                 title: 'Share PDF File',
               };

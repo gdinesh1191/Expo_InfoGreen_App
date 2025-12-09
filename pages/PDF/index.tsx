@@ -47,7 +47,8 @@ export default function PDF({ route }: any) {
     const sharePDF = (pdfPath: any) => {
         console.log('pdfPath', pdfPath);
         const shareOptions = {
-            url: `content://${pdfPath}`,
+            // `pdfPath` should already be a proper file:// or content:// URI
+            url: pdfPath,
             type: 'application/pdf',
             title: 'Share PDF File',
         };

@@ -49,11 +49,11 @@ export default function Login() {
   const [image, setImage] = useState<string | null>(null);
 
   const pickImage = async () => {
-    const permissionGranted = await requestStoragePermission();
-    console.log(permissionGranted);
-    if (!permissionGranted) {
-      return;
-    }
+    // const permissionGranted = await requestStoragePermission();
+    // console.log(permissionGranted);
+    // if (!permissionGranted) {
+    //   return;
+    // }
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
@@ -194,29 +194,29 @@ export default function Login() {
     }
   };
 
-  const requestStoragePermission = async (): Promise<boolean> => {
-    try {
-      if (Platform.OS !== 'android') {
-        return true;
-      }
+  // const requestStoragePermission = async (): Promise<boolean> => {
+  //   try {
+  //     if (Platform.OS !== 'android') {
+  //       return true;
+  //     }
 
-      // Android 13+ uses READ_MEDIA_IMAGES; older versions use READ_EXTERNAL_STORAGE
-      if ((Platform as any).Version >= 33) {
-        const res = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-        );
-        return res === PermissionsAndroid.RESULTS.GRANTED;
-      } else {
-        const res = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        );
-        return res === PermissionsAndroid.RESULTS.GRANTED;
-      }
-    } catch (error) {
-      console.error('Error requesting storage permission:', error);
-      return false;
-    }
-  }
+  //     // Android 13+ uses READ_MEDIA_IMAGES; older versions use READ_EXTERNAL_STORAGE
+  //     if ((Platform as any).Version >= 33) {
+  //       const res = await PermissionsAndroid.request(
+  //         PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+  //       );
+  //       return res === PermissionsAndroid.RESULTS.GRANTED;
+  //     } else {
+  //       const res = await PermissionsAndroid.request(
+  //         PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+  //       );
+  //       return res === PermissionsAndroid.RESULTS.GRANTED;
+  //     }
+  //   } catch (error) {
+  //     console.error('Error requesting storage permission:', error);
+  //     return false;
+  //   }
+  // }
   // const method = 'aes-256-cbc';
 
   // // Generate a random IV (Initialization Vector)
