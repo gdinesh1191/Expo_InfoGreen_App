@@ -677,7 +677,8 @@ export default function Webview() {
 
   const sharePDF = (pdfPath: any) => {
     const shareOptions = {
-      url: `content://${pdfPath}`,
+      // `pdfPath` from Expo Print / FileSystem already has a valid scheme
+      url: pdfPath,
       type: "application/pdf",
       title: "Share PDF File",
     };
