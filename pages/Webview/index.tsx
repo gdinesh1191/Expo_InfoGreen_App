@@ -967,7 +967,7 @@ export default function Webview() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         cacheEnabled={false}
-        incognito={true}
+        incognito={false}
         pullToRefreshEnabled={false}
         ref={webViewRef}
         onNavigationStateChange={(navState) => {
