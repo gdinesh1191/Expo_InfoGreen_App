@@ -32,9 +32,11 @@ public class ReminderModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = false)
-    public void showReminder(String message) {  // Removed taskId and title
+    public void showReminder(String message, String remindmeUrl, String dismissUrl) {
         try {
             Context context = reactContext.getApplicationContext();
+            final String safeRemind = remindmeUrl != null ? remindmeUrl : "";
+            final String safeDismiss = dismissUrl != null ? dismissUrl : "";
 
             // Create and acquire wake lock first
             PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
@@ -57,26 +59,23 @@ public class ReminderModule extends ReactContextBaseJavaModule {
                                 new KeyguardManager.KeyguardDismissCallback() {
                                     @Override
                                     public void onDismissSucceeded() {
-                                        launchReminderActivity(context, message, wakeLock); // Updated
+                                        launchReminderActivity(context, message, safeRemind, safeDismiss, wakeLock);
                                     }
 
                                     @Override
                                     public void onDismissError() {
-                                        // Fallback: try to show the reminder anyway
-                                        launchReminderActivity(context, message, wakeLock); // Updated
+                                        launchReminderActivity(context, message, safeRemind, safeDismiss, wakeLock);
                                     }
                                 }
                         );
                     } else {
-                        // If no activity is available, just launch the reminder
-                        launchReminderActivity(context, message, wakeLock); // Updated
+                        launchReminderActivity(context, message, safeRemind, safeDismiss, wakeLock);
                     }
                 } else {
-                    // For older Android versions, try to show the reminder directly
-                    launchReminderActivity(context, message, wakeLock); // Updated
+                    launchReminderActivity(context, message, safeRemind, safeDismiss, wakeLock);
                 }
             } else {
-                launchReminderActivity(context, message, wakeLock); // Updated
+                launchReminderActivity(context, message, safeRemind, safeDismiss, wakeLock);
             }
 
         } catch (Exception e) {
@@ -224,9 +223,11 @@ public class ReminderModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private void launchReminderActivity(Context context, String message, PowerManager.WakeLock wakeLock) {  // Updated
+    private void launchReminderActivity(Context context, String message, String remindmeUrl, String dismissUrl, PowerManager.WakeLock wakeLock) {
         Intent intent = new Intent(context, ReminderActivity.class);
-        intent.putExtra("message", message); // Removed taskId and title
+        intent.putExtra("message", message);
+        intent.putExtra("remindme_url", remindmeUrl);
+        intent.putExtra("dismiss_url", dismissUrl);
         intent.setFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK |
                     Intent.FLAG_ACTIVITY_CLEAR_TOP |

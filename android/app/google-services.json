@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "941668881753",
+    "project_id": "infogreen-419805",
+    "storage_bucket": "infogreen-419805.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941668881753:android:825483a60579c802f4e848",
+        "android_client_info": {
+          "package_name": "com.cloudbook.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmbOBAlvb-zoY7rAhWIvAVdaaFRcP5NoQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941668881753:android:cb3d4d3a5c68d28ef4e848",
+        "android_client_info": {
+          "package_name": "com.igcloudbook.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmbOBAlvb-zoY7rAhWIvAVdaaFRcP5NoQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

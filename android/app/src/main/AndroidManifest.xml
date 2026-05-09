@@ -40,6 +40,10 @@
       </intent-filter>
     </receiver>
 
+    <service
+      android:name=".ReminderButtonHeadlessService"
+      android:exported="false" />
+
     <service android:name="com.asterinet.react.bgactions.BackgroundTaskService" />
     <service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="dataSync" android:exported="true" />
     <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:screenOrientation="portrait">
