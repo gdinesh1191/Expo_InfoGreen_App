@@ -5,38 +5,40 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.WindowManager;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AlertDialog;
-import android.content.DialogInterface;
 import android.view.Window;
 import android.app.KeyguardManager;
 import android.content.Context;
-import com.facebook.react.ReactApplication;
-import com.facebook.react.ReactInstanceManager;
-import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.bridge.ReactContext;
 import android.util.Log;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+
+import com.facebook.react.ReactApplication;
+import com.facebook.react.ReactInstanceManager;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 public class ReminderActivity extends AppCompatActivity {
-    
+
+    /** JS event name — subscribe via ReminderModule.ts listenReminderButtonAction */
+    public static final String REMINDER_BUTTON_EVENT = "ReminderButtonAction";
+
     private TextView titleText;
     private TextView messageText;
     private Button dismissButton;
     private Button snoozeButton;
     private MediaPlayer mediaPlayer;
     private SharedPreferences sharedPreferences;
+    /** Per-notification API URLs from FCM; forwarded to JS on button tap */
+    private String remindmeUrl = "";
+    private String dismissUrl = "";
 
     @Override
     public void onBackPressed() {
@@ -46,11 +48,9 @@ public class ReminderActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Initialize SharedPreferences
+
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        
-        // Handle lock screen
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
@@ -58,7 +58,6 @@ public class ReminderActivity extends AppCompatActivity {
             keyguardManager.requestDismissKeyguard(this, null);
         }
 
-        // Set window flags
         Window window = getWindow();
         window.addFlags(
             WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
@@ -67,10 +66,9 @@ public class ReminderActivity extends AppCompatActivity {
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
             WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         );
-        
+
         setContentView(R.layout.activity_reminder);
 
-        // Setup gradient background
         GradientDrawable gradientDrawable = new GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
             new int[] {
@@ -78,33 +76,27 @@ public class ReminderActivity extends AppCompatActivity {
                 Color.parseColor("#000000")
             }
         );
-        
+
         LinearLayout rootLayout = findViewById(R.id.rootLayout);
         rootLayout.setBackground(gradientDrawable);
 
-        // Initialize views
         titleText = findViewById(R.id.titleText);
         messageText = findViewById(R.id.messageText);
         dismissButton = findViewById(R.id.dismissButton);
         snoozeButton = findViewById(R.id.snoozeButton);
 
-        // Get data from intent
-        String message = getIntent().getStringExtra("message");
-        if (message == null) message = "Reminder Message";
-        
-        String title = "Reminder!";
-        titleText.setText(title);
-        messageText.setText(message);
+        applyIntentExtras(getIntent());
 
-        // Initialize and start playing sound
         startAlarmSound();
 
-        // Handle snooze button click: show centered dialog of minute options
-        snoozeButton.setOnClickListener(this::showSnoozeDialog);
+        snoozeButton.setOnClickListener(v -> {
+            handleReminderAction("onSnooze", "snooze");
+            stopAlarmSound();
+            finish();
+        });
 
-        // Handle dismiss button click
         dismissButton.setOnClickListener(v -> {
-            handleReminderAction("onDismiss");
+            handleReminderAction("onDismiss", "dismiss");
             stopAlarmSound();
             finish();
         });
@@ -113,7 +105,6 @@ public class ReminderActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Ensure window flags are set when activity starts
         getWindow().addFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
             WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
@@ -125,7 +116,6 @@ public class ReminderActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Start sound when activity resumes
         if (mediaPlayer == null || !mediaPlayer.isPlaying()) {
             startAlarmSound();
         }
@@ -134,9 +124,20 @@ public class ReminderActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        // Handle new intents
+        setIntent(intent);
+        applyIntentExtras(intent);
+    }
+
+    private void applyIntentExtras(Intent intent) {
+        if (intent == null) return;
         String message = intent.getStringExtra("message");
-        if (message != null) messageText.setText(message);
+        if (message == null) message = "Reminder Message";
+        titleText.setText("Reminder!");
+        messageText.setText(message);
+        String ru = intent.getStringExtra("remindme_url");
+        String du = intent.getStringExtra("dismiss_url");
+        remindmeUrl = ru != null ? ru : "";
+        dismissUrl = du != null ? du : "";
     }
 
     @Override
@@ -145,84 +146,56 @@ public class ReminderActivity extends AppCompatActivity {
         stopAlarmSound();
     }
 
-    private void showSnoozeDialog(View anchor) {
-        final int[] minuteOptions = new int[] {5, 10, 15, 30, 60, 120};
-        final String[] labels = new String[minuteOptions.length];
-        for (int i = 0; i < minuteOptions.length; i++) {
-            labels[i] = formatMinutesLabel(minuteOptions[i]);
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Remind me in");
-        builder.setItems(labels, (dialog, which) -> {
-            int selectedMinutes = minuteOptions[which];
-            handleSnoozeSelection(selectedMinutes);
-        });
-        builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
-        builder.show();
-    }
-
-    private String formatMinutesLabel(int minutes) {
-        if (minutes >= 60) {
-            int hours = minutes / 60;
-            return hours + (hours == 1 ? " hour" : " hours");
-        }
-        return minutes + " minutes";
-    }
-
-    private void handleSnoozeSelection(int minutes) {
+    /**
+     * @param prefAction stored for native/legacy readers: onSnooze / onDismiss
+     * @param jsAction   sent to JS: "snooze" | "dismiss"
+     */
+    private void handleReminderAction(String prefAction, String jsAction) {
+        String msg = messageText.getText().toString();
         try {
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt("last_snooze_minutes", minutes);
-            editor.apply();
-        } catch (Exception ignored) {}
-
-        // Schedule the snoozed alarm immediately at native level to avoid delays
-        try {
-            long triggerAt = System.currentTimeMillis() + (minutes * 60L * 1000L);
-            String msg = messageText.getText().toString();
-
-            Intent intent = new Intent(this, ReminderAlarmReceiver.class);
-            intent.putExtra("message", msg);
-
-            int requestCode = msg != null ? msg.hashCode() : 0;
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-
-            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            if (alarmManager != null) {
-                // Cancel any existing alarm for this message and schedule the new one
-                alarmManager.cancel(pendingIntent);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent);
-                } else {
-                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent);
-                }
-            }
-        } catch (Exception ignored) {}
-
-        handleReminderAction("onSnooze");
-        stopAlarmSound();
-        finish();
-    }
-
-    private void handleReminderAction(String action) {
-        try {
-            // Save the action and message to SharedPreferences
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("last_reminder_action", action);
-            editor.putString("last_reminder_message", messageText.getText().toString());
+            editor.putString("last_reminder_action", prefAction);
+            editor.putString("last_reminder_message", msg);
             editor.putLong("last_reminder_timestamp", System.currentTimeMillis());
             editor.apply();
 
-            // Log for debugging
-            Log.d("ReminderActivity", "Saved reminder action: " + action + " for message: " + messageText.getText().toString());
+            Log.d("ReminderActivity", "Saved reminder action: " + prefAction + " for message: " + msg);
         } catch (Exception e) {
             Log.e("ReminderActivity", "Error saving reminder action: " + e.getMessage());
+        }
+
+        emitToJs(jsAction, msg);
+    }
+
+    private void emitToJs(String action, String message) {
+        try {
+            ReactApplication app = (ReactApplication) getApplication();
+            ReactInstanceManager rim = app.getReactNativeHost().getReactInstanceManager();
+            ReactContext reactContext = rim.getCurrentReactContext();
+            WritableMap payload = Arguments.createMap();
+            payload.putString("action", action);
+            payload.putString("message", message != null ? message : "");
+            payload.putString("remindme_url", remindmeUrl != null ? remindmeUrl : "");
+            payload.putString("dismiss_url", dismissUrl != null ? dismissUrl : "");
+
+            if (reactContext != null) {
+                reactContext
+                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                    .emit(REMINDER_BUTTON_EVENT, payload);
+                return;
+            }
+
+            // App / JS not running: wake Headless JS with the same payload
+            Log.d("ReminderActivity", "No ReactContext — starting Headless JS for reminder button");
+            Intent headless = new Intent(this, ReminderButtonHeadlessService.class);
+            headless.putExtra("action", action);
+            headless.putExtra("message", message != null ? message : "");
+            headless.putExtra("remindme_url", remindmeUrl != null ? remindmeUrl : "");
+            headless.putExtra("dismiss_url", dismissUrl != null ? dismissUrl : "");
+            headless.putExtra("timestamp", System.currentTimeMillis());
+            startService(headless);
+        } catch (Exception e) {
+            Log.e("ReminderActivity", "emitToJs failed: " + e.getMessage());
         }
     }
 

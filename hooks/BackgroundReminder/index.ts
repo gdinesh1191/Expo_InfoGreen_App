@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeModules, Platform } from "react-native";
 import BackgroundService from "react-native-background-actions";
 import { makeApiCall } from "../api/backgroundAPICall";
-import { cancelReminder, scheduleReminder } from "./ReminderModule";
+import { scheduleReminder } from "./ReminderModule";
 
 const { SharedPreferences } = NativeModules;
 
@@ -136,8 +136,8 @@ const updateRemindersWithNewData = async (newData: any) => {
     const newReminders = newData.filter(
       (newItem: any) =>
         !existingReminders.some(
-          (existingItem: any) => existingItem.date === newItem.date
-        )
+          (existingItem: any) => existingItem.date === newItem.date,
+        ),
     );
 
     if (newReminders.length > 0) {
@@ -188,7 +188,7 @@ const initializeReminders = async () => {
 
         await AsyncStorage.setItem(
           "reminder",
-          JSON.stringify(sanitizedDetails)
+          JSON.stringify(sanitizedDetails),
         );
         console.log("Initialized AsyncStorage with fetched Details.");
         // Schedule alarms for the initialized reminders
@@ -226,73 +226,73 @@ const checkForReminderActions = async () => {
     if (Platform.OS === "android") {
       const lastAction = await SharedPreferences.getString(
         "last_reminder_action",
-        ""
+        "",
       );
       const lastMessage = await SharedPreferences.getString(
         "last_reminder_message",
-        ""
+        "",
       );
       const lastTimestamp = await SharedPreferences.getLong(
         "last_reminder_timestamp",
-        0
+        0,
       );
       const lastSnoozeMinutesRaw = await SharedPreferences.getInt(
         "last_snooze_minutes",
-        2
+        2,
       );
       console.log("lastAction", lastAction);
       console.log("lastMessage", lastMessage);
       console.log("lastTimestamp", lastTimestamp);
 
-      if (lastAction && lastMessage && lastTimestamp > 0) {
-        console.log("Found reminder action:", {
-          lastAction,
-          lastMessage,
-          lastTimestamp,
-        });
+      // if (lastAction && lastMessage && lastTimestamp > 0) {
+      //   console.log("Found reminder action:", {
+      //     lastAction,
+      //     lastMessage,
+      //     lastTimestamp,
+      //   });
 
-        const reminders = await getReminderData();
-        let updatedReminders;
+      //   const reminders = await getReminderData();
+      //   let updatedReminders;
 
-        if (lastAction === "onSnooze") {
-          const snoozeMinutes = Math.max(1, Number(lastSnoozeMinutesRaw || 2));
-          updatedReminders = reminders.map((task: any) => {
-            if (task.message === lastMessage) {
-              const newDate = new Date(
-                new Date().getTime() + snoozeMinutes * 60000
-              );
-              return {
-                ...task,
-                snoozeDate: newDate.toISOString().slice(0, 16),
-                status: "pending",
-              };
-            }
-            return task;
-          });
-          // Schedule new snooze alarm immediately to avoid relying on polling cadence
-          const snoozeMs = new Date(new Date().getTime() + snoozeMinutes * 60000).getTime();
-          scheduleReminder(String(lastMessage), snoozeMs);
-        } else if (lastAction === "onDismiss") {
-          updatedReminders = reminders.map((task: any) => {
-            if (task.message === lastMessage) {
-              return { ...task, status: "completed" };
-            }
-            return task;
-          });
-          // Cancel any scheduled alarm for this reminder
-          cancelReminder(String(lastMessage));
-        }
+      //   if (lastAction === "onSnooze") {
+      //     const snoozeMinutes = Math.max(1, Number(lastSnoozeMinutesRaw || 2));
+      //     updatedReminders = reminders.map((task: any) => {
+      //       if (task.message === lastMessage) {
+      //         const newDate = new Date(
+      //           new Date().getTime() + snoozeMinutes * 60000
+      //         );
+      //         return {
+      //           ...task,
+      //           snoozeDate: newDate.toISOString().slice(0, 16),
+      //           status: "pending",
+      //         };
+      //       }
+      //       return task;
+      //     });
+      //     // Schedule new snooze alarm immediately to avoid relying on polling cadence
+      //     const snoozeMs = new Date(new Date().getTime() + snoozeMinutes * 60000).getTime();
+      //     scheduleReminder(String(lastMessage), snoozeMs);
+      //   } else if (lastAction === "onDismiss") {
+      //     updatedReminders = reminders.map((task: any) => {
+      //       if (task.message === lastMessage) {
+      //         return { ...task, status: "completed" };
+      //       }
+      //       return task;
+      //     });
+      //     // Cancel any scheduled alarm for this reminder
+      //     cancelReminder(String(lastMessage));
+      //   }
 
-        if (updatedReminders) {
-          await saveReminderData(updatedReminders);
-          // Clear the action after processing
-          await SharedPreferences.removeItem("last_reminder_action");
-          await SharedPreferences.removeItem("last_reminder_message");
-          await SharedPreferences.removeItem("last_reminder_timestamp");
-          await SharedPreferences.removeItem("last_snooze_minutes");
-          console.log("Reminder action processed and cleared");
-        }
-      }
+      //   if (updatedReminders) {
+      //     await saveReminderData(updatedReminders);
+      //     // Clear the action after processing
+      //     await SharedPreferences.removeItem("last_reminder_action");
+      //     await SharedPreferences.removeItem("last_reminder_message");
+      //     await SharedPreferences.removeItem("last_reminder_timestamp");
+      //     await SharedPreferences.removeItem("last_snooze_minutes");
+      //     console.log("Reminder action processed and cleared");
+      //   }
+      // }
     }
   } catch (error) {
     console.error("Error checking reminder actions:", error);
@@ -372,7 +372,7 @@ export const startReminderService = async () => {
     }
     await BackgroundService.start(
       (taskdata: any) => reminderTask(taskdata),
-      taskConfig
+      taskConfig,
     );
     console.log("Background Service started");
   } catch (err: any) {

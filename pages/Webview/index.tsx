@@ -25,7 +25,6 @@ import { WebView } from "react-native-webview";
 import { useDispatch, useSelector } from "react-redux";
 // import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import { scaleFont } from "@/constants/ScaleFont";
-// import { startReminderService } from '@/hooks/BackgroundReminder';
 import { CameraType, CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
 
@@ -33,11 +32,7 @@ import { styles } from "./style";
 
 import { PermissionModal } from "@/constants/utils/permissionModal";
 import { postUserDetails } from "@/hooks/api/postUserDetails";
-import { startReminderService } from "@/hooks/BackgroundReminder";
-import {
-  ensureExactAlarmPermission,
-  ensureOverlayPermission,
-} from "@/hooks/BackgroundReminder/ReminderModule";
+// import { startReminderService } from "@/hooks/BackgroundReminder";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useShareIntent } from "expo-share-intent";
 import DeviceInfo from "react-native-device-info";
@@ -46,7 +41,7 @@ export default function Webview() {
   const users = useSelector((store: any) => store?.user?.userData);
   const URL = users?.url;
   const SharedFile_URL = useSelector(
-    (store: any) => store?.user?.SharedFile_URL
+    (store: any) => store?.user?.SharedFile_URL,
   );
   const Image_URL = useSelector((store: any) => store?.user?.Image_URL);
   const Audio_URL = useSelector((store: any) => store?.user?.Audio_URL);
@@ -57,9 +52,9 @@ export default function Webview() {
   const [state, setstate] = useState(false);
   const [location, setLocation] = useState<any | null>(null);
   const userStatus = useSelector((store: any) => store?.user?.userData?.status);
-  const isReminderServiceEnabled = useSelector(
-    (store: any) => store?.user?.isReminderServiceEnabled
-  );
+  // const isReminderServiceEnabled = useSelector(
+  //   (store: any) => store?.user?.isReminderServiceEnabled,
+  // );
   const navigation = useNavigation<any>();
   const [Location_Id, setLocation_Id] = useState(null);
   const [bardcode_id, setbardcode_id] = useState(null);
@@ -249,12 +244,17 @@ export default function Webview() {
         const userDetails = JSON.parse(userdetails);
 
         if (userDetails !== null || userDetails !== undefined) {
-          if(!userDetails.deviceInfo || !userDetails.appName || !userDetails.userId || userDetails.userId.trim()===''){
-            userDetails.deviceInfo=deviceInfo,
-            userDetails.appName=deviceInfo?.appName,
-            userDetails.userId=deviceInfo?.androidID
+          if (
+            !userDetails.deviceInfo ||
+            !userDetails.appName ||
+            !userDetails.userId ||
+            userDetails.userId.trim() === ""
+          ) {
+            ((userDetails.deviceInfo = deviceInfo),
+              (userDetails.appName = deviceInfo?.appName),
+              (userDetails.userId = deviceInfo?.androidID));
           }
-          AsyncStorage.setItem("userDetails",JSON.stringify(userDetails))
+          AsyncStorage.setItem("userDetails", JSON.stringify(userDetails));
           const details = await postUserDetails(userDetails);
           dispatch({ type: "POST_USER_SUCCESS", payload: details });
           // console.log("details",details);
@@ -301,24 +301,24 @@ export default function Webview() {
 
     if (isAndroid10OrAbove) {
       const granted = await PermissionsAndroid.check(
-        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
       );
       if (!granted) {
         navigation.navigate("PermissionScreen");
       }
     }
 
-    if (isReminderServiceEnabled) {
-      await ensureOverlayPermission();
-      await ensureExactAlarmPermission();
-      // await ensureBatteryOptimizationExemption();
-    }
+    // if (isReminderServiceEnabled) {
+    //   await ensureOverlayPermission();
+    //   await ensureExactAlarmPermission();
+    //   // await ensureBatteryOptimizationExemption();
+    // }
   };
-  useEffect(() => {
-    if (isReminderServiceEnabled) {
-      startReminderService();
-    }
-  }, [isReminderServiceEnabled]);
+  // useEffect(() => {
+  //   if (isReminderServiceEnabled) {
+  //     startReminderService();
+  //   }
+  // }, [isReminderServiceEnabled]);
 
   useEffect(() => {
     // getting androidID
@@ -433,7 +433,7 @@ export default function Webview() {
     if (appStateListenerActive) {
       const subscription = AppState.addEventListener(
         "change",
-        handleAppStateChange
+        handleAppStateChange,
       );
       return () => {
         subscription.remove();
@@ -455,7 +455,7 @@ export default function Webview() {
         }
 
         setAppState(nextAppState);
-      }
+      },
     );
 
     return () => {
@@ -502,7 +502,7 @@ export default function Webview() {
 
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
-      backAction
+      backAction,
     );
 
     return () => backHandler.remove();
@@ -695,7 +695,7 @@ export default function Webview() {
   const convertUrlToPdf = async (
     PrintUrl: string,
     name: string,
-    number: string
+    number: string,
   ) => {
     try {
       setPrintModalVisible(true);
@@ -812,7 +812,7 @@ export default function Webview() {
           [
             { text: "Cancel", style: "cancel" },
             { text: "Open", onPress: () => openPDF(targetFile.uri) },
-          ]
+          ],
         );
         return;
       }
@@ -822,7 +822,7 @@ export default function Webview() {
       const downloadedFile = await File.downloadFileAsync(
         encodedUrl,
         targetFile,
-        { headers: { Accept: "application/pdf" } }
+        { headers: { Accept: "application/pdf" } },
       );
 
       setDownloadModalVisible(false);
@@ -872,7 +872,7 @@ export default function Webview() {
         buttonNeutral: "Ask Me Later",
         buttonNegative: "Cancel",
         buttonPositive: "OK",
-      }
+      },
     );
     if (granted === PermissionsAndroid.RESULTS.GRANTED) {
       setIsCameraOpen(true);
@@ -895,7 +895,7 @@ export default function Webview() {
             buttonNeutral: "Ask Me Later",
             buttonNegative: "Cancel",
             buttonPositive: "OK",
-          }
+          },
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           setModalVisible(true); // Start loading
@@ -907,7 +907,7 @@ export default function Webview() {
           console.log(
             "Location:",
             location.coords.latitude,
-            location.coords.longitude
+            location.coords.longitude,
           );
         } else {
           setModalVisible(false); // Stop loading
@@ -922,7 +922,7 @@ export default function Webview() {
         console.log(
           "Location:",
           location.coords.latitude,
-          location.coords.longitude
+          location.coords.longitude,
         );
       }
     } catch (err) {
