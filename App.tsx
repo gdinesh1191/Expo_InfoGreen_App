@@ -29,8 +29,8 @@ import {
   listenReminderButtonAction,
   showReminder,
 } from "./hooks/BackgroundReminder/ReminderModule";
-import { submitReminderButtonAction } from "./hooks/BackgroundReminder/reminderButtonApi";
 import { extractReminderFromFcmMessage } from "./hooks/BackgroundReminder/fcmReminderPayload";
+import { submitReminderButtonAction } from "./hooks/BackgroundReminder/reminderButtonApi";
 // You can remove this if you don't need to wait for any assets
 // SplashScreen.preventAutoHideAsync();
 
@@ -182,7 +182,7 @@ function Root() {
       }
     };
 
-    // API key = "os_v2_app_2c2umyyk2vewxoe3ijf3xcb35l5vk3nettguldm5izlij7szwm3tujadxcaseioh7undahnnvcays3665elipzn3rs46qhok7wgyouy"
+    // API key = "os_v2_app_2c2umyyk2vewxoe3ijf3xcb35lmtcak4xcruyrfmpesd5424gwd3aso6vqfi6bcdpu4a7x6zmf7ow3bdl33mxw7qvcygclgyigb66za"
 
     const onForegroundWillDisplay = (event: any) => {
       const notification = event.getNotification();
