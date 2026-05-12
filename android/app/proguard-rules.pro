@@ -12,3 +12,8 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+
+# R8 (release): expo-asset must match Expo SDK (54 -> expo-asset ~12). If a stale SDK 55+ AAR is on the
+# classpath, it references these types; they are not in expo-modules-core 3.0.x. AGP suggests:
+-dontwarn expo.modules.kotlin.services.FilePermissionService$Permission
+-dontwarn expo.modules.kotlin.services.FilePermissionService
