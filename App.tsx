@@ -12,7 +12,7 @@ import {
 import { ShareIntentProvider } from "expo-share-intent";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
-import { Text, TextInput, useColorScheme, View } from "react-native";
+import { Platform, Text, TextInput, useColorScheme, View } from "react-native";
 import { LogLevel, OneSignal } from "react-native-onesignal";
 import "react-native-reanimated";
 import {
@@ -23,11 +23,8 @@ import { Provider, useSelector } from "react-redux";
 import AuthStackNavigator from "./app/AuthStackNavigator";
 import MainNavigator from "./app/MainNavigator";
 import {
-  ensureBatteryOptimizationExemption,
-  ensureExactAlarmPermission,
-  ensureOverlayPermission,
   listenReminderButtonAction,
-  showReminder,
+  showReminder
 } from "./hooks/BackgroundReminder/ReminderModule";
 import { extractReminderFromFcmMessage } from "./hooks/BackgroundReminder/fcmReminderPayload";
 import { submitReminderButtonAction } from "./hooks/BackgroundReminder/reminderButtonApi";
@@ -106,19 +103,20 @@ function Root() {
   useEffect(() => {
     // Ask native permissions/capabilities when app opens (Android only).
     // Each helper checks first and opens settings only if required.
-    (async () => {
-      try {
-        await ensureOverlayPermission();
-        await ensureExactAlarmPermission();
-        await ensureBatteryOptimizationExemption();
-      } catch (e) {
-        console.log("Reminder permissions check failed:", e);
-      }
-    })();
+    // (async () => {
+    //   try {
+    //     await ensureOverlayPermission();
+    //     await ensureExactAlarmPermission();
+    //     await ensureBatteryOptimizationExemption();
+    //   } catch (e) {
+    //     console.log("Reminder permissions check failed:", e);
+    //   }
+    // })();
 
     OneSignal.Debug.setLogLevel(LogLevel.Verbose);
 
-    OneSignal.initialize("d0b54663-0ad5-496b-b89b-424bbb883bea");
+    // OneSignal.initialize("d0b54663-0ad5-496b-b89b-424bbb883bea");
+    OneSignal.initialize("0e92107b-915a-41d3-9570-bb3d3430ab72");
 
     OneSignal.User.pushSubscription
       .getIdAsync()
@@ -259,7 +257,7 @@ function Root() {
             <MainNavigator />
           )}
         </NavigationContainer>
-        <View style={{ height: insets.bottom }} />
+        <View style={{ height: Platform.OS === 'ios' ? 0:insets.bottom }} />
       </View>
     </ThemeProvider>
   );

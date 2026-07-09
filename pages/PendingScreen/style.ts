@@ -1,11 +1,16 @@
 import { scaleFont } from "@/constants/ScaleFont";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   modalView: {
     margin: 20,
-    marginTop: "65%",
-    backgroundColor: "grey",
+    marginTop: Platform.OS === "ios" ? "0%" : "65%",
+    backgroundColor: "gray",
     borderRadius: 20,
     padding: 35,
     alignItems: "center",
@@ -53,6 +58,8 @@ export const styles = StyleSheet.create({
   modalBtnText: {
     color: "black",
     fontSize: scaleFont(16),
+    flex: 1,
+    textAlign: "center",
   },
   modalText1: {
     color: "white",
@@ -117,19 +124,18 @@ export const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   loaderModalView: {
-      margin: 20,
-      marginTop: '80%',
-      backgroundColor: "white",
-      borderRadius: 20,
-      padding: 35,
-      alignItems: 'center',
-      shadowColor: '#fff',
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#fff",
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
 });

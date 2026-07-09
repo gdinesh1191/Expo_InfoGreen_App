@@ -11,7 +11,6 @@ import { ActivityIndicator, Alert, BackHandler, Dimensions, Image, KeyboardAvoid
 import { OneSignal } from 'react-native-onesignal';
 
 import { PermissionModal } from '@/constants/utils/permissionModal';
-import BarcodeScanning from '@react-native-ml-kit/barcode-scanning';
 import { CameraType, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import DeviceInfo from 'react-native-device-info';
@@ -70,7 +69,12 @@ export default function Login() {
     }
   };
   const scanQRCodeFromFile = async (uri: string) => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
     try {
+      const BarcodeScanning = require('@react-native-ml-kit/barcode-scanning').default;
       const barcodes = await BarcodeScanning.scan(uri);
       if (barcodes.length > 0) {
         console.log('QR Data:', barcodes[0].value);
@@ -110,7 +114,8 @@ export default function Login() {
         modal,
         productName,
         applicationVersion,
-        appName
+        appName,
+        uniqueId
       ] = await Promise.all([
         DeviceInfo.getApiLevel(),
         DeviceInfo.getAndroidId(),
@@ -130,7 +135,8 @@ export default function Login() {
         DeviceInfo.getModel(),
         DeviceInfo.getProduct(),
         DeviceInfo.getVersion(),
-        DeviceInfo.getApplicationName()
+        DeviceInfo.getApplicationName(),
+        DeviceInfo.getUniqueId()
       ]);
 
       const deviceInfo = {
@@ -152,7 +158,8 @@ export default function Login() {
         modal,
         productName,
         applicationVersion,
-        appName
+        appName,
+        uniqueId
       };
       setDeviceInfo(deviceInfo);
     } catch (error) {
@@ -171,6 +178,24 @@ export default function Login() {
   };
 
   const checkPermissions = async () => {
+    if (Platform.OS === 'ios') {
+      const { granted } = await ImagePicker.getCameraPermissionsAsync();
+      if (granted) {
+        setIsCameraOpen(true);
+        return;
+      }
+
+      setIsCameraOpen(false);
+      const { granted: requestGranted } = await ImagePicker.requestCameraPermissionsAsync();
+      if (requestGranted) {
+        setIsCameraOpen(true);
+      } else {
+        console.log('Permission denied');
+        setPermissionModalVisible(true);
+      }
+      return;
+    }
+
     const granted = await PermissionsAndroid.check(
       PermissionsAndroid.PERMISSIONS.CAMERA,
     );
@@ -278,7 +303,7 @@ export default function Login() {
           await OneSignal.User.pushSubscription.getIdAsync();
 
         // Storing to local storage
-        const userId = deviceInfo.androidID;
+        const userId = Platform.OS === "ios" ? deviceInfo?.uniqueId : deviceInfo?.androidID;
         console.log(id);
         const userDetails = {
           userId,
@@ -305,6 +330,9 @@ export default function Login() {
       }
     } catch (error) {
       console.error('Error saving user details:', error);
+      setisvisible(false);
+      dispatch({ type: 'POST_USER_FAILURE', payload: error });
+      Alert.alert('Network Error', 'Unable to connect to the server. Please check your internet connection and try again.');
     }
   };
   // const codeScanner = useCodeScanner({
@@ -330,20 +358,21 @@ export default function Login() {
         userId: deviceInfo.androidID,
         subscriptionId: id,
       };
-      NetInfo.fetch().then(async (state: any) => {
-        if (!state.isConnected) {
-          navigation.navigate('Network'); // Navigate to network error page
-        } else {
-          await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
-          setisvisible(true);
-          // store to server useing axios post method under the keyword of "userDetails"
-          const details = await postUserDetails(userDetails);
-          dispatch({ type: 'POST_USER_SUCCESS', payload: details });
-        }
-      });
+      const state = await NetInfo.fetch();
+      if (!state.isConnected) {
+        navigation.navigate('Network'); // Navigate to network error page
+      } else {
+        await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
+        setisvisible(true);
+        // store to server useing axios post method under the keyword of "userDetails"
+        const details = await postUserDetails(userDetails);
+        dispatch({ type: 'POST_USER_SUCCESS', payload: details });
+      }
     } catch (error) {
-      console.error('Error parsing scanned QR code data:', error);
-      Alert.alert('Error', 'Failed to parse scanned QR code data');
+      console.error('Error saving scanned QR code data:', error);
+      setisvisible(false);
+      dispatch({ type: 'POST_USER_FAILURE', payload: error });
+      Alert.alert('Network Error', 'Unable to connect to the server. Please check your internet connection and try again.');
     }
   };
 
@@ -401,6 +430,7 @@ export default function Login() {
                     placeholder="Enter your name"
                     placeholderTextColor="#9CA3AF"
                     value={name}
+                    keyboardType="default"
                     onChangeText={text => {
                       let filteredText = text.replace(/[^a-zA-Z\s]/g, '').replace(/\s{2,}/g, ' ');
                       filteredText = filteredText.replace(/\b\w/g, char => char.toUpperCase());
@@ -424,6 +454,7 @@ export default function Login() {
                     placeholder="company / institution name"
                     placeholderTextColor="#9CA3AF"
                     value={companyName}
+                    keyboardType="default"
                     onChangeText={text => {
                       let filteredText = text.replace(/[^a-zA-Z\s]/g, '').replace(/\s{2,}/g, ' ');
                       filteredText = filteredText.replace(/\b\w/g, char => char.toUpperCase());
@@ -468,30 +499,34 @@ export default function Login() {
                 <Text style={styles.createAccountButtonText}>Register</Text>
               </TouchableHighlight>
 
-              {/* OR Divider */}
-              <View style={styles.orDividerContainer}>
-                <View style={styles.orDividerLine} />
-                <Text style={styles.orText}>or</Text>
-                <View style={styles.orDividerLine} />
-              </View>
+              {Platform.OS === 'android' && (
+                <>
+                  {/* OR Divider */}
+                  <View style={styles.orDividerContainer}>
+                    <View style={styles.orDividerLine} />
+                    <Text style={styles.orText}>or</Text>
+                    <View style={styles.orDividerLine} />
+                  </View>
 
-              {/* Scan QR Code Button */}
-              <TouchableHighlight
-                style={styles.scanQRButton}
-                onPress={checkPermissions}
-                underlayColor={'#f3f4f6'}>
-                <View style={styles.scanQRButtonContent}>
-                  <MaterialCommunityIcons name="qrcode-scan" size={20} color="#008541" />
-                  <Text style={styles.scanQRButtonText}>Scan QR Code</Text>
-                </View>
-              </TouchableHighlight>
+                  {/* Scan QR Code Button */}
+                  <TouchableHighlight
+                    style={styles.scanQRButton}
+                    onPress={checkPermissions}
+                    underlayColor={'#f3f4f6'}>
+                    <View style={styles.scanQRButtonContent}>
+                      <MaterialCommunityIcons name="qrcode-scan" size={20} color="#008541" />
+                      <Text style={styles.scanQRButtonText}>Scan QR Code</Text>
+                    </View>
+                  </TouchableHighlight>
+                </>
+              )}
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
 
-      {isCameraOpen && (
+      {Platform.OS === 'android' && isCameraOpen && (
         <Modal
           visible={isCameraOpen}
           onRequestClose={() => setIsCameraOpen(!isCameraOpen)}

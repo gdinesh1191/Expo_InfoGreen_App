@@ -5,19 +5,20 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import Foundation from '@expo/vector-icons/Foundation';
 import { useNavigation } from '@react-navigation/native';
-import { RecordingPresets, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder } from 'expo-audio';
+import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder } from 'expo-audio';
 import { Directory, File, Paths } from 'expo-file-system';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    BackHandler,
-    Dimensions,
-    Modal,
-    PermissionsAndroid,
-    Text,
-    TouchableHighlight,
-    View
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Dimensions,
+  Modal,
+  PermissionsAndroid,
+  Platform,
+  Text,
+  TouchableHighlight,
+  View
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { styles } from './style';
@@ -40,8 +41,20 @@ export default function Record({ route }: any) {
   const audioRecorderPlayer = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const player = useAudioPlayer(URL);
   const status = useAudioPlayerStatus(player);
-  const requestMicrophonePermission = async () => {
+  const requestMicrophonePermission = async (): Promise<boolean> => {
     try {
+      if (Platform.OS === 'ios') {
+        const status = await AudioModule.requestRecordingPermissionsAsync();
+        if (status.granted) {
+          console.log('Microphone permission granted');
+          return true;
+        } else {
+          console.log('Microphone permission denied');
+          setPermissionModalVisible(true);
+          return false;
+        }
+      }
+
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
@@ -54,21 +67,22 @@ export default function Record({ route }: any) {
       );
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
         console.log('Microphone permission granted');
-        // You can now use the microphone
+        return true;
       } else {
         console.log('Microphone permission denied');
         setPermissionModalVisible(true);
-        // Handle the case where permission is denied
+        return false;
       }
     } catch (err) {
       console.warn(err);
+      return false;
     }
   };
 
   const generateFilePath = () => {
     const timestamp = new Date().getTime();
     const targetDirectory = new Directory(Paths.document);
-    const path = `${targetDirectory.uri}/${timestamp}.mp3`;
+    const path =  Platform.OS === 'ios' ? `${targetDirectory.uri}/${timestamp}.m4a` : `${targetDirectory.uri}/${timestamp}.mp3`;
     setRecordingPath(path);
     console.log(path);
 
@@ -95,8 +109,8 @@ export default function Record({ route }: any) {
       const formData: any = new FormData();
       formData.append('audio', {
         uri: `file://${targetFile.uri}`,
-        name: 'audio.mp3', // You can adjust the filename as needed
-        type: 'audio/mpeg', // Adjust the MIME type if needed
+        name: Platform.OS === 'ios' ? 'audio.m4a' : 'audio.mp3',
+        type: Platform.OS === 'ios' ? 'audio/mp4' : 'audio/mpeg',
       });
       formData.append('ClientID', ClientId);
       // Send the FormData object to the API
@@ -114,7 +128,16 @@ export default function Record({ route }: any) {
   const onStartRecord = async () => {
     await generateFilePath();
     try {
-      await requestMicrophonePermission();
+      const granted = await requestMicrophonePermission();
+      if (!granted) return;
+
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: true,
+        interruptionMode: 'mixWithOthers',
+        shouldPlayInBackground: false,
+        shouldRouteThroughEarpiece: false,
+      });
 
       await audioRecorderPlayer.prepareToRecordAsync();
       await audioRecorderPlayer.record();
@@ -122,7 +145,6 @@ export default function Record({ route }: any) {
       setIsRecordingStop(false);
     } catch (error) {
       console.log('Error starting recording:', error);
-
     }
   };
 
@@ -132,8 +154,11 @@ export default function Record({ route }: any) {
       setIsRecording(false);
       setIsRecordingStop(true);
 
-      console.log('Recording saved at:', recordingPath);
-      setURL(audioRecorderPlayer.uri);
+      const uri = audioRecorderPlayer.uri;
+      if (uri) {
+        console.log('Recording saved at:', uri);
+        setURL(uri);
+      }
       setUploadmodalVisible(true);
     } catch (error) {
       console.log('Error stopping recording:', error);
@@ -173,7 +198,20 @@ export default function Record({ route }: any) {
 
 
   useEffect(() => {
-    requestMicrophonePermission();
+    (async () => {
+      await requestMicrophonePermission();
+      try {
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          allowsRecording: true,
+          interruptionMode: 'mixWithOthers',
+          shouldPlayInBackground: false,
+          shouldRouteThroughEarpiece: false,
+        });
+      } catch {
+        // ignore; we'll attempt again when recording starts
+      }
+    })();
   }, []);
   const closeModal = () => {
     setUploadmodalVisible(false);

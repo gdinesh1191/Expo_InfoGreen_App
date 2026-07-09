@@ -3,11 +3,11 @@ import { useNavigation } from "@react-navigation/native";
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Modal,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Modal,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSelector } from 'react-redux';
 import { styles } from "./style";

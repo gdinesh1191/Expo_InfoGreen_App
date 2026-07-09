@@ -386,7 +386,7 @@ export default function Print({ route }: any) {
         onLayout={onViewShotLayout}
       >
         <Pdf
-          source={{ uri: `file://${pdfFilePath}` }}
+          source={{ uri: Platform.OS === "ios" ? pdfFilePath : `file://${pdfFilePath}` }}
           onLoadComplete={(numberOfPages: number, filePath: string) => {
             console.log(`Number of pages: ${numberOfPages}`, filePath);
           }}
@@ -400,6 +400,7 @@ export default function Print({ route }: any) {
             console.log(`Link pressed: ${uri}`);
           }}
           style={styles.pdf}
+          showsVerticalScrollIndicator={false}
         />
       </ViewShot>
 

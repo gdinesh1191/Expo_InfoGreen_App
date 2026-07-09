@@ -25,8 +25,9 @@ import { WebView } from "react-native-webview";
 import { useDispatch, useSelector } from "react-redux";
 // import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import { scaleFont } from "@/constants/ScaleFont";
-import { CameraType, CameraView } from "expo-camera";
+import { Camera, CameraType, CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
+import { OneSignal } from "react-native-onesignal";
 
 import { styles } from "./style";
 
@@ -190,6 +191,7 @@ export default function Webview() {
         productName,
         applicationVersion,
         appName,
+        uniqueId,
       ] = await Promise.all([
         DeviceInfo.getApiLevel(),
         DeviceInfo.getAndroidId(),
@@ -210,6 +212,7 @@ export default function Webview() {
         DeviceInfo.getProduct(),
         DeviceInfo.getVersion(),
         DeviceInfo.getApplicationName(),
+        DeviceInfo.getUniqueId(),
       ]);
       const deviceInfo = {
         androidApiLevel,
@@ -231,6 +234,7 @@ export default function Webview() {
         productName,
         applicationVersion,
         appName,
+        uniqueId,
       };
       setDeviceInfo(deviceInfo);
     } catch (error) {
@@ -243,7 +247,7 @@ export default function Webview() {
       if (userdetails) {
         const userDetails = JSON.parse(userdetails);
 
-        if (userDetails !== null || userDetails !== undefined) {
+        if (userDetails !== null && userDetails !== undefined) {
           if (
             !userDetails.deviceInfo ||
             !userDetails.appName ||
@@ -252,7 +256,7 @@ export default function Webview() {
           ) {
             ((userDetails.deviceInfo = deviceInfo),
               (userDetails.appName = deviceInfo?.appName),
-              (userDetails.userId = deviceInfo?.androidID));
+              (userDetails.userId = Platform.OS === "ios" ? deviceInfo?.uniqueId : deviceInfo?.androidID));
           }
           AsyncStorage.setItem("userDetails", JSON.stringify(userDetails));
           const details = await postUserDetails(userDetails);
@@ -263,6 +267,7 @@ export default function Webview() {
       }
     } catch (error) {
       console.log("error", error);
+      dispatch({ type: "POST_USER_FAILURE", payload: error });
     }
   };
 
@@ -305,6 +310,18 @@ export default function Webview() {
       );
       if (!granted) {
         navigation.navigate("PermissionScreen");
+      }
+    }
+
+    if (Platform.OS === "ios") {
+      try {
+        const granted = await OneSignal.Notifications.requestPermission(true);
+        if (!granted) {
+          navigation.navigate("PermissionScreen");
+        }
+      } catch (e) {
+        // If OneSignal isn't ready yet, don't block the user here.
+        console.log("OneSignal permission check failed:", e);
       }
     }
 
@@ -667,7 +684,10 @@ export default function Webview() {
       setDownloadModalVisible(false);
 
       // Share directly from generated file URI
-      sharePDF(uri);
+      setTimeout(() => {
+        
+        sharePDF(uri);
+      }, 1000);
     } catch (error) {
       setDownloadModalVisible(false);
       Alert.alert("Error", "Failed to convert and share URL as PDF");
@@ -864,6 +884,17 @@ export default function Webview() {
   };
 
   const requestCameraPermission = async () => {
+    if (Platform.OS === "ios") {
+      const { granted } = await Camera.requestCameraPermissionsAsync();
+      if (granted) {
+        setIsCameraOpen(true);
+        return true;
+      } else {
+        setPermissionModalVisible(true);
+        return false;
+      }
+    }
+
     const granted = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.CAMERA,
       {
@@ -914,6 +945,13 @@ export default function Webview() {
           setPermissionModalVisible(true);
         }
       } else {
+        const perm = await Location.requestForegroundPermissionsAsync();
+        if (perm.status !== "granted") {
+          setModalVisible(false);
+          setPermissionModalVisible(true);
+          return;
+        }
+        setModalVisible(true);
         const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
         });
@@ -957,6 +995,7 @@ export default function Webview() {
       <WebView
         userAgent={`${appVersion}/infogreen-c-app/${AndroidID}/${subscriptionID}`}
         source={{ uri: URL }}
+        // source={{uri: "https://infogreen.in/test"}}
         startInLoadingState
         renderLoading={() => (
           <View style={[styles.container, styles.horizontal]}>
@@ -974,6 +1013,7 @@ export default function Webview() {
           setCanGoBack(navState.canGoBack);
           canGoBackRef.current = navState.canGoBack; // keep latest value
         }}
+        showsVerticalScrollIndicator={false}
         textZoom={100}
         injectedJavaScript={injectScript}
         onMessage={handleWebViewMessage}

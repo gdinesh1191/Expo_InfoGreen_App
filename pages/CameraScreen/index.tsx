@@ -3,18 +3,18 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    BackHandler,
-    Image,
-    Linking,
-    Modal,
-    PermissionsAndroid,
-    Platform,
-    Text,
-    TouchableHighlight,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Image,
+  Linking,
+  Modal,
+  PermissionsAndroid,
+  Platform,
+  Text,
+  TouchableHighlight,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import RNPhotoManipulator from 'react-native-photo-manipulator';
 
@@ -25,7 +25,7 @@ import { useDispatch } from 'react-redux';
 import { scaleFont } from '@/constants/ScaleFont';
 import { PermissionModal } from '@/constants/utils/permissionModal';
 import { PostFile } from '@/hooks/api/PostFile';
-import { CameraType, CameraView } from 'expo-camera';
+import { Camera, CameraType, CameraView } from 'expo-camera';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Location from 'expo-location';
 import { styles } from './style';
@@ -106,12 +106,37 @@ const CameraScreen = ({ route }: any) => {
   };
 
   const RequestPermission = async () => {
-    const granted = await PermissionsAndroid.requestMultiple(
-      [PermissionsAndroid.PERMISSIONS.CAMERA, PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION],
-    );
-    if (granted['android.permission.CAMERA'] === PermissionsAndroid.RESULTS.GRANTED && granted['android.permission.ACCESS_FINE_LOCATION'] === PermissionsAndroid.RESULTS.GRANTED) {
-      return true;
-    } else {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.requestMultiple(
+          [
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          ],
+        );
+
+        const cameraGranted =
+          granted['android.permission.CAMERA'] === PermissionsAndroid.RESULTS.GRANTED;
+        const locationGranted =
+          granted['android.permission.ACCESS_FINE_LOCATION'] ===
+          PermissionsAndroid.RESULTS.GRANTED;
+
+        if (cameraGranted && locationGranted) return true;
+
+        setPermissionModalVisible(true);
+        return false;
+      }
+
+      // iOS permissions (Expo)
+      const cameraPerm = await Camera.requestCameraPermissionsAsync();
+      const locationPerm = await Location.requestForegroundPermissionsAsync();
+
+      if (cameraPerm.status === 'granted' && locationPerm.status === 'granted') return true;
+
+      setPermissionModalVisible(true);
+      return false;
+    } catch (e) {
+      console.log('RequestPermission error:', e);
       setPermissionModalVisible(true);
       return false;
     }

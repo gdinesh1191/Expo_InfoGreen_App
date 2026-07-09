@@ -56,7 +56,7 @@ export default function Splashscreen() {
         navigation.navigate('WelcomeScreen');
       } else {
         const userDetails = JSON.parse(savedUserDetails);
-        if(userDetails!==null ||userDetails!==undefined){
+        if(userDetails!==null && userDetails!==undefined){
           const details=await postUserDetails(userDetails)
           dispatch({ type: 'POST_USER_SUCCESS', payload: details });
           // console.log("details",details);
@@ -65,6 +65,8 @@ export default function Splashscreen() {
       }
     } catch (error) {
       console.error('Error checking user details:', error);
+      dispatch({ type: 'POST_USER_FAILURE', payload: error });
+      navigation.navigate('Network');
     }
   };
   return (

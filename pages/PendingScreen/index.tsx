@@ -4,13 +4,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    BackHandler,
-    Image,
-    Modal,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  BackHandler,
+  Image,
+  Modal,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import DeviceInfo from "react-native-device-info";
 import { useDispatch, useSelector } from "react-redux";
@@ -34,9 +35,10 @@ export default function PendingScreen() {
   // getting deatils from the localstorage and passing it into the api and checking the user Status and all the details are stored under the keyword "userDetails" in api
 
   const handleData = async () => {
+    setModalVisible(false);
     setIsApiCall(true);
     try {
-      if (userDetails !== null || userDetails !== undefined) {
+      if (userDetails !== null && userDetails !== undefined) {
         if (
           !userDetails.deviceInfo ||
           !userDetails.appName ||
@@ -45,13 +47,14 @@ export default function PendingScreen() {
         ) {
           (userDetails.deviceInfo = deviceInfo),
             (userDetails.appName = deviceInfo?.appName),
-            (userDetails.userId = deviceInfo?.androidID);
+            (userDetails.userId = Platform.OS === "ios" ? deviceInfo?.uniqueId : deviceInfo?.androidID);
         }
         AsyncStorage.setItem("userDetails", JSON.stringify(userDetails));
         const details = await postUserDetails(userDetails);
         dispatch({ type: "POST_USER_SUCCESS", payload: details });
-        if (status === "success") {
+        if (details?.status === "success") {
           setIsApiCall(false);
+          setModalVisible(false);
           navigation.navigate("Webview");
         } else {
           setIsApiCall(false);
@@ -61,6 +64,9 @@ export default function PendingScreen() {
       }
     } catch (error) {
       console.log(error);
+      dispatch({ type: "POST_USER_FAILURE", payload: error });
+      setIsApiCall(false);
+      setModalVisible(false);
     }
   };
   const getAllDeviceInfo = async () => {
@@ -85,6 +91,7 @@ export default function PendingScreen() {
         productName,
         applicationVersion,
         appName,
+        uniqueId,
       ] = await Promise.all([
         DeviceInfo.getApiLevel(),
         DeviceInfo.getAndroidId(),
@@ -105,6 +112,7 @@ export default function PendingScreen() {
         DeviceInfo.getProduct(),
         DeviceInfo.getVersion(),
         DeviceInfo.getApplicationName(),
+        DeviceInfo.getUniqueId(),
       ]);
       const deviceInfo = {
         androidApiLevel,
@@ -126,6 +134,7 @@ export default function PendingScreen() {
         productName,
         applicationVersion,
         appName,
+        uniqueId,
       };
       setDeviceInfo(deviceInfo);
     } catch (error) {
@@ -169,10 +178,11 @@ export default function PendingScreen() {
     try {
       if (status === "success" && userDetails.userId) {
         navigation.navigate("Webview");
-        setModalVisible(false)
-      }
-      else{
-        setModalVisible(false)
+        setModalVisible(false);
+        setIsApiCall(false);
+      } else {
+        setModalVisible(false);
+        setIsApiCall(false);
       }
     } catch (error) {
       console.log(error);
@@ -215,47 +225,47 @@ export default function PendingScreen() {
           onPress={handleData}
         /> */}
 
-      {!isApiCall && (
-        <Modal animationType="slide" transparent={true} visible={modalVisible}>
-          <View style={styles.modalView}>
-            <Text style={styles.referenceNo}>
-              Reference.No : {userDetails.userId ? userDetails.userId : "null"}
-            </Text>
-
-            <Text style={styles.modalText1}>
-              We are currently processing your activation. Kindly remain patient
-              while we finalize the process.
-            </Text>
-
-            <Text style={styles.modalText2}>
-              For any inquiries, Please reach out to us:{" "}
-            </Text>
-            <Text style={styles.modalText3}>
-              Mobile: <B>9566950467</B> {"\n"} Email:{" "}
-              <B>support@infogreen.in</B> .
-            </Text>
-            <TouchableOpacity
-              style={styles.modalBtn}
-              onPress={handleOk}
-            >
-              <Text style={styles.modalBtnText}>Ok</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-      )}
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
-        visible={isApiCall}
-        onRequestClose={() => setIsApiCall(false)}
+        visible={isApiCall || modalVisible}
+        onRequestClose={() => {
+          setIsApiCall(false);
+          setModalVisible(false);
+        }}
       >
-        <View>
-          <View style={styles.loaderModalView}>
-            <ActivityIndicator size="large" color="#00ff00" />
-            <Text style={{ color: "black", fontSize: scaleFont(16) }}>
-              Loading....
-            </Text>
-          </View>
+        <View style={styles.centeredView}>
+          {isApiCall ? (
+            <View style={styles.loaderModalView}>
+              <ActivityIndicator size="large" color="#00ff00" />
+              <Text style={{ color: "black", fontSize: scaleFont(16) }}>
+                Loading....
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.modalView}>
+              <Text style={styles.referenceNo}>
+                Reference.No :{" "}
+                {userDetails.userId ? userDetails.userId : "null"}
+              </Text>
+
+              <Text style={styles.modalText1}>
+                We are currently processing your activation. Kindly remain
+                patient while we finalize the process.
+              </Text>
+
+              <Text style={styles.modalText2}>
+                For any inquiries, Please reach out to us:{" "}
+              </Text>
+              <Text style={styles.modalText3}>
+                Mobile: <B>9566950467</B> {"\n"} Email:{" "}
+                <B>support@infogreen.in</B> .
+              </Text>
+              <TouchableOpacity style={styles.modalBtn} onPress={handleOk}>
+                <Text style={styles.modalBtnText}>Ok</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </Modal>
     </View>

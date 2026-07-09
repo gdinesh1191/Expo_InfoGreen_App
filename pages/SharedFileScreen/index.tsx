@@ -237,7 +237,7 @@ export default function Sharedfile({ route }: any) {
           height: '7%',
         }}>
         <AntDesign name="close-circle" size={scaleFont(25)} color="#fff" style={{ alignSelf: 'center', left: scaleFont(20), top: scaleFont(10), marginBottom: scaleFont(15) }}
-          onPress={() => navigation.goBack()} />
+          onPress={() => navigation.navigate("Webview")} />
 
         <Text
           style={{

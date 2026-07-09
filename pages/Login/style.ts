@@ -1,5 +1,5 @@
 import { scaleFont } from "@/constants/ScaleFont";
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, Platform, StyleSheet } from "react-native";
 const ScreenWidth = Dimensions.get('window').width;
 const ScreenHeight = Dimensions.get('window').height;
 export const styles = StyleSheet.create({
@@ -28,7 +28,7 @@ export const styles = StyleSheet.create({
       alignItems: 'center',
     },
     imageContainer: {
-      marginTop: ScreenHeight*0.05,
+      marginTop: Platform.OS === 'android' ? ScreenHeight*0.05 : 0,
       alignItems: 'center',
       marginBottom: 10,
     },
@@ -50,12 +50,14 @@ export const styles = StyleSheet.create({
     inputWrapper: {
       marginBottom: 20,
       paddingHorizontal: 12,
+
     },
     inputLabel: {
       fontSize: scaleFont(15),
       color: '#374151',
       fontFamily: 'Poppins-Light',
       fontWeight: 'bold',
+      marginBottom: Platform.OS === 'ios' ? 15 : 0,
     },
     inputContainer: {
       flexDirection: 'row',
@@ -67,13 +69,15 @@ export const styles = StyleSheet.create({
     },
     inputIcon: {
       marginRight: 0,
+      marginBottom: Platform.OS === 'ios' ? 15 : 0,
     },
     input: {
       flex: 1,
       fontSize: scaleFont(15),
       color: '#1F2937',
       fontFamily: 'Poppins-Light',
-      paddingHorizontal: 15
+      paddingHorizontal: 15,
+      marginBottom: Platform.OS === 'ios' ? 15 : 0,
     },
     inputError: {
       borderColor: '#EF4444',

@@ -42,6 +42,7 @@ export default function OpenLink({route}:any) {
         ref={webViewRef}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        showsVerticalScrollIndicator={false}
                 
         />
 

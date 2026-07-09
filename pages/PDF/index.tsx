@@ -81,6 +81,7 @@ export default function PDF({ route }: any) {
                 }}
 
                 style={styles.pdf}
+                showsVerticalScrollIndicator={false}
             />
             <View style={{ flexDirection: 'row', gap: 50, marginBottom: 50, top: 20, width: 200, backgroundColor: "#008541", borderRadius: 20, justifyContent: 'center', padding: 10, alignSelf: 'center' }} >
                 <AntDesign name="printer" size={30} color="#fff" style={{ alignSelf: 'center' }}
