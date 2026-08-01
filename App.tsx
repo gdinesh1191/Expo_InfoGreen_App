@@ -24,7 +24,7 @@ import AuthStackNavigator from "./app/AuthStackNavigator";
 import MainNavigator from "./app/MainNavigator";
 import {
   listenReminderButtonAction,
-  showReminder
+  showReminder,
 } from "./hooks/BackgroundReminder/ReminderModule";
 import { extractReminderFromFcmMessage } from "./hooks/BackgroundReminder/fcmReminderPayload";
 import { submitReminderButtonAction } from "./hooks/BackgroundReminder/reminderButtonApi";
@@ -148,8 +148,8 @@ function Root() {
     (async () => {
       try {
         // Android 13+ requires runtime POST_NOTIFICATIONS permission.
-        const granted = await OneSignal.Notifications.requestPermission(true);
-        console.log("OneSignal: permission granted=", granted);
+        // const granted = await OneSignal.Notifications.requestPermission(true);
+        // console.log("OneSignal: permission granted=", granted);
 
         // Give the SDK a moment to register and obtain subscription id/token.
         setTimeout(async () => {
@@ -257,7 +257,7 @@ function Root() {
             <MainNavigator />
           )}
         </NavigationContainer>
-        <View style={{ height: Platform.OS === 'ios' ? 0:insets.bottom }} />
+        <View style={{ height: Platform.OS === "ios" ? 0 : insets.bottom }} />
       </View>
     </ThemeProvider>
   );

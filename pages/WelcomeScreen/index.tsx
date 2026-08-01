@@ -1,41 +1,56 @@
-import { scaleFont } from '@/constants/ScaleFont'; // Assuming this utility is available
-import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useRef, useState } from 'react';
-import { BackHandler, Dimensions, FlatList, Image, Text, TouchableHighlight, TouchableOpacity, View } from 'react-native';
-import { styles } from './style'; // Assuming styles are defined here
+import { scaleFont } from "@/constants/ScaleFont"; // Assuming this utility is available
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  BackHandler,
+  Dimensions,
+  FlatList,
+  Image,
+  Platform,
+  Text,
+  TouchableHighlight,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { styles } from "./style"; // Assuming styles are defined here
 
 // --- Page Data Definition ---
 const PAGES = [
   {
-    imageSource: require('../../assets/images/GstBilling.png'),
-    title: 'GST Billing Software',
-    subtitle: 'Create GST-compliant invoices instantly and track tax reports effortlessly. Simplify billing and boost financial accuracy.',
+    imageSource: require("../../assets/images/GstBilling.png"),
+    title: "GST Billing Software",
+    subtitle:
+      "Create GST-compliant invoices instantly and track tax reports effortlessly. Simplify billing and boost financial accuracy.",
   },
   {
-    imageSource: require('../../assets/images/HR.png'),
-    title: 'HR Management System',
-    subtitle: 'Handle payroll, attendance, and employee data with ease. Automate HR tasks and focus on your people.',
+    imageSource: require("../../assets/images/HR.png"),
+    title: "HR Management System",
+    subtitle:
+      "Handle payroll, attendance, and employee data with ease. Automate HR tasks and focus on your people.",
   },
   {
-    imageSource: require('../../assets/images/WareHouse.png'),
-    title: 'Warehouse Management',
-    subtitle: 'Track inventory, stock movement, and shipments in real time. Improve accuracy and warehouse efficiency.',
+    imageSource: require("../../assets/images/WareHouse.png"),
+    title: "Warehouse Management",
+    subtitle:
+      "Track inventory, stock movement, and shipments in real time. Improve accuracy and warehouse efficiency.",
   },
   {
-    imageSource: require('../../assets/images/ERP.png'),
-    title: 'Customised ERP Solutions',
-    subtitle: 'Get ERP software built around your business. Flexible, scalable, and fully integrated for smooth operations.',
+    imageSource: require("../../assets/images/ERP.png"),
+    title: "Customised ERP Solutions",
+    subtitle:
+      "Get ERP software built around your business. Flexible, scalable, and fully integrated for smooth operations.",
   },
   {
-    imageSource: require('../../assets/images/SchoolManagement.png'),
-    title: 'School Management ',
-    subtitle: 'Manage attendance, grades, and communication — all in one platform. Smart tools for schools that simplify daily tasks.',
+    imageSource: require("../../assets/images/SchoolManagement.png"),
+    title: "School Management ",
+    subtitle:
+      "Manage attendance, grades, and communication — all in one platform. Smart tools for schools that simplify daily tasks.",
   },
 ];
 
 const TOTAL_PAGES = PAGES.length;
-const ScreenHeight = Dimensions.get('window').height;
-const ScreenWidth = Dimensions.get('window').width;
+const ScreenHeight = Dimensions.get("window").height;
+const ScreenWidth = Dimensions.get("window").width;
 export default function WelcomeScreen() {
   const navigation = useNavigation<any>();
   // State to track the current onboarding page index
@@ -45,7 +60,7 @@ export default function WelcomeScreen() {
   // --- Hardware Back Button Handler ---
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
+      "hardwareBackPress",
       () => {
         // Exit the app when back button is pressed on the onboarding screen
         BackHandler.exitApp();
@@ -57,7 +72,11 @@ export default function WelcomeScreen() {
 
   // --- Navigation Handlers ---
   const handleStart = () => {
-    navigation.navigate("Login");
+    if (Platform.OS === "android") {
+      navigation.navigate("Login");
+    } else {
+      navigation.navigate("PermissionScreenIOS");
+    }
   };
 
   const handleNext = () => {
@@ -75,7 +94,7 @@ export default function WelcomeScreen() {
     const selected = index === currentPageIndex;
     return (
       <TouchableHighlight
-        underlayColor={'transparent'}
+        underlayColor={"transparent"}
         onPress={() => {
           setCurrentPageIndex(index);
           flatListRef.current?.scrollToIndex({ index, animated: true });
@@ -86,7 +105,7 @@ export default function WelcomeScreen() {
         <View
           style={[
             styles.dotsub,
-            selected ? { backgroundColor: '#008541' } : {},
+            selected ? { backgroundColor: "#008541" } : {},
           ]}
         />
       </TouchableHighlight>
@@ -96,10 +115,10 @@ export default function WelcomeScreen() {
   // Customized DONE/START button
   const DoneButtonComponent = () => {
     return (
-      <View style={{ width: '100%' }}>
+      <View style={{ width: "100%" }}>
         <TouchableHighlight
           style={styles.nextbtn}
-          underlayColor={'#007a2a'}
+          underlayColor={"#007a2a"}
           onPress={handleStart}
         >
           <Text style={styles.nextbtntxt}>Get Started</Text>
@@ -111,10 +130,10 @@ export default function WelcomeScreen() {
   // Customized NEXT button
   const NextButtonComponent = () => {
     return (
-      <View style={{ width: '100%' }}>
+      <View style={{ width: "100%" }}>
         <TouchableHighlight
           style={styles.nextbtn}
-          underlayColor={'#007a2a'}
+          underlayColor={"#007a2a"}
           onPress={handleNext}
         >
           <Text style={styles.nextbtntxt}>Next</Text>
@@ -128,8 +147,7 @@ export default function WelcomeScreen() {
   const isLastPage = currentPageIndex === TOTAL_PAGES - 1;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
       {!isLastPage && (
         <View style={styles.skipBar}>
           <TouchableOpacity onPress={handleStart}>
@@ -139,7 +157,7 @@ export default function WelcomeScreen() {
       )}
 
       {/* Current Onboarding Content (Swipeable) */}
-      <View style={{ flex: 1, justifyContent: 'flex-start' }}>
+      <View style={{ flex: 1, justifyContent: "flex-start" }}>
         <FlatList
           ref={flatListRef}
           data={PAGES}
@@ -147,14 +165,28 @@ export default function WelcomeScreen() {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ alignItems: 'center' }}
-          getItemLayout={(_, index) => ({ length: ScreenWidth, offset: ScreenWidth * index, index })}
+          contentContainerStyle={{ alignItems: "center" }}
+          getItemLayout={(_, index) => ({
+            length: ScreenWidth,
+            offset: ScreenWidth * index,
+            index,
+          })}
           onMomentumScrollEnd={(e) => {
-            const index = Math.round(e.nativeEvent.contentOffset.x / ScreenWidth);
+            const index = Math.round(
+              e.nativeEvent.contentOffset.x / ScreenWidth,
+            );
             setCurrentPageIndex(index);
           }}
           renderItem={({ item }) => (
-            <View style={{ width: ScreenWidth, height: ScreenHeight - (ScreenHeight * 0.1 + 10), paddingHorizontal: scaleFont(20), alignItems: 'center', justifyContent: 'center' }}>
+            <View
+              style={{
+                width: ScreenWidth,
+                height: ScreenHeight - (ScreenHeight * 0.1 + 10),
+                paddingHorizontal: scaleFont(20),
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <Image style={styles.image} source={item.imageSource} />
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.subtitle}>{item.subtitle}</Text>
@@ -166,20 +198,27 @@ export default function WelcomeScreen() {
       {/* Bottom Bar (Dots and Buttons) */}
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          alignItems: "center",
           paddingHorizontal: 20,
           paddingVertical: 10,
           marginBottom: 10,
         }}
       >
         {/* Dots Indicator */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 30 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 30,
+          }}
+        >
           {PAGES.map((_, index) => (
             <DotComponent key={index} index={index} />
           ))}

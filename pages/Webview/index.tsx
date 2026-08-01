@@ -27,7 +27,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { scaleFont } from "@/constants/ScaleFont";
 import { Camera, CameraType, CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
-import { OneSignal } from "react-native-onesignal";
 
 import { styles } from "./style";
 
@@ -256,7 +255,10 @@ export default function Webview() {
           ) {
             ((userDetails.deviceInfo = deviceInfo),
               (userDetails.appName = deviceInfo?.appName),
-              (userDetails.userId = Platform.OS === "ios" ? deviceInfo?.uniqueId : deviceInfo?.androidID));
+              (userDetails.userId =
+                Platform.OS === "ios"
+                  ? deviceInfo?.uniqueId
+                  : deviceInfo?.androidID));
           }
           AsyncStorage.setItem("userDetails", JSON.stringify(userDetails));
           const details = await postUserDetails(userDetails);
@@ -313,17 +315,17 @@ export default function Webview() {
       }
     }
 
-    if (Platform.OS === "ios") {
-      try {
-        const granted = await OneSignal.Notifications.requestPermission(true);
-        if (!granted) {
-          navigation.navigate("PermissionScreen");
-        }
-      } catch (e) {
-        // If OneSignal isn't ready yet, don't block the user here.
-        console.log("OneSignal permission check failed:", e);
-      }
-    }
+    // if (Platform.OS === "ios") {
+    //   try {
+    //     const granted = await OneSignal.Notifications.requestPermission(true);
+    //     if (!granted) {
+    //       navigation.navigate("PermissionScreen");
+    //     }
+    //   } catch (e) {
+    //     // If OneSignal isn't ready yet, don't block the user here.
+    //     console.log("OneSignal permission check failed:", e);
+    //   }
+    // }
 
     // if (isReminderServiceEnabled) {
     //   await ensureOverlayPermission();
@@ -345,7 +347,10 @@ export default function Webview() {
     const appversion = DeviceInfo.getBuildNumber();
     setAppVersion(appversion);
     getId();
-    checkPermissions();
+    if (Platform.OS === "android") {
+      checkPermissions();
+    }
+
     getAllDeviceInfo();
     // Handle app state changes for review
 
@@ -685,7 +690,6 @@ export default function Webview() {
 
       // Share directly from generated file URI
       setTimeout(() => {
-        
         sharePDF(uri);
       }, 1000);
     } catch (error) {
