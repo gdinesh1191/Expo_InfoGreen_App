@@ -1,4 +1,5 @@
 import { scaleFont } from "@/constants/ScaleFont";
+import { requestLocationPermissions } from "@/hooks/location/getlocation";
 import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
@@ -6,6 +7,7 @@ import {
   Image,
   ImageBackground,
   Linking,
+  Modal,
   PermissionsAndroid,
   Platform,
   Text,
@@ -18,6 +20,7 @@ import { styles } from "./style";
 export default function PermissionScreen() {
   const navigation = useNavigation<any>();
   const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
+  const [locationGuideVisible, setLocationGuideVisible] = useState(false);
 
   //   useEffect(()=>{
   // checkPermission
@@ -66,7 +69,7 @@ export default function PermissionScreen() {
             ],
           );
         } else {
-          navigation.navigate("Webview");
+          setLocationGuideVisible(true);
         }
       }
     } catch (err) {
@@ -134,6 +137,12 @@ export default function PermissionScreen() {
     }
   };
 
+  const handleLocationGuideOk = async () => {
+    setLocationGuideVisible(false);
+    await requestLocationPermissions();
+    navigation.navigate("Webview");
+  };
+
   const openAppSettings = () => {
     Linking.openSettings().catch(() => {
       Alert.alert(
@@ -172,6 +181,30 @@ export default function PermissionScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={locationGuideVisible}
+        onRequestClose={() => setLocationGuideVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Location Permission</Text>
+            <Text style={styles.modalText1}>
+              To keep tracking your location in the background, please select{" "}
+              <Text style={{ fontWeight: "bold" }}>Allow all the time</Text> on
+              the next screen.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalBtn}
+              onPress={handleLocationGuideOk}
+            >
+              <Text style={styles.modalBtnText}>Ok</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ImageBackground>
   );
 }

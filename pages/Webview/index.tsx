@@ -9,6 +9,7 @@ import {
   Alert,
   AppState,
   BackHandler,
+  Button,
   Modal,
   PermissionsAndroid,
   Platform,
@@ -33,6 +34,9 @@ import { styles } from "./style";
 import { PermissionModal } from "@/constants/utils/permissionModal";
 import { postUserDetails } from "@/hooks/api/postUserDetails";
 // import { startReminderService } from "@/hooks/BackgroundReminder";
+import { startLocationService } from "@/hooks/location";
+import { exportLocationDataExcelUri } from "@/hooks/location/exportExcel";
+import { hasLocationPermissions } from "@/hooks/location/getlocation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useShareIntent } from "expo-share-intent";
 import DeviceInfo from "react-native-device-info";
@@ -338,6 +342,27 @@ export default function Webview() {
   //     startReminderService();
   //   }
   // }, [isReminderServiceEnabled]);
+
+  // Permissions are requested on PermissionScreen. Start only if already granted.
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const startIfAlreadyGranted = async () => {
+      if (await hasLocationPermissions()) {
+        await startLocationService();
+      }
+    };
+
+    void startIfAlreadyGranted();
+
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        void startIfAlreadyGranted();
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     // getting androidID
@@ -866,6 +891,25 @@ export default function Webview() {
     navigation.navigate("PDF", { pdfPath: pdfPath });
   };
 
+  const downloadLocationExcel = async () => {
+    try {
+      const uri = await exportLocationDataExcelUri();
+      if (!uri) {
+        Alert.alert("No data", "No location data to export.");
+        return;
+      }
+
+      await Share.open({
+        url: uri,
+        type: "application/vnd.ms-excel",
+        filename: "location_data.xls",
+        title: "Download Excel",
+      });
+    } catch (error) {
+      console.log("Excel export error:", error);
+    }
+  };
+
   // Handle QRcode for getting the details from the mention barcode or qrcode
   const handleQRCodeScan = async (data: any) => {
     try {
@@ -978,6 +1022,7 @@ export default function Webview() {
       {/* here i am checking the user status for getting the link from api if user status is pending the api doesn't provide the link that case it navigate to bending screen once the status is success it will provid the link and user navigate to webview  */}
 
       <View>
+        <Button title="Download Excel" onPress={downloadLocationExcel} />
         <Modal
           animationType="slide"
           transparent={true}

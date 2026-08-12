@@ -356,6 +356,8 @@ const taskConfig = {
     package: "com.igcloudbook.app",
   },
   color: "#008541",
+  // Required on Android 14+ / targetSdk 36 — type "none" crashes the app
+  foregroundServiceType: ["dataSync"] as "dataSync"[],
   parameters: {
     delay: 30000,
   },

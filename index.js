@@ -1,13 +1,15 @@
-import { AppRegistry } from "react-native";
 import { getApp } from "@react-native-firebase/app";
 import {
   getMessaging,
   setBackgroundMessageHandler,
 } from "@react-native-firebase/messaging";
+import { AppRegistry } from "react-native";
 // import { Data } from "./App";
 
-AppRegistry.registerHeadlessTask("ReminderButtonHeadlessTask", () =>
-  require("./hooks/BackgroundReminder/reminderButtonHeadlessTask").default,
+AppRegistry.registerHeadlessTask(
+  "ReminderButtonHeadlessTask",
+  () =>
+    require("./hooks/BackgroundReminder/reminderButtonHeadlessTask").default,
 );
 
 try {
@@ -15,7 +17,9 @@ try {
   const messagingInstance = getMessaging(app);
 
   setBackgroundMessageHandler(messagingInstance, async (remoteMessage) => {
-    const { extractReminderFromFcmMessage } = require("./hooks/BackgroundReminder/fcmReminderPayload");
+    const {
+      extractReminderFromFcmMessage,
+    } = require("./hooks/BackgroundReminder/fcmReminderPayload");
     const { message, remindmeUrl, dismissUrl } =
       extractReminderFromFcmMessage(remoteMessage);
     showReminder(message, { remindmeUrl, dismissUrl });
