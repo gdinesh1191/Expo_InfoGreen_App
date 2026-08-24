@@ -1,13 +1,20 @@
-import { scaleFont } from '@/constants/ScaleFont';
-import { PermissionModal } from '@/constants/utils/permissionModal';
-import { PostAudio } from '@/hooks/api/PostAudio';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import Foundation from '@expo/vector-icons/Foundation';
-import { useNavigation } from '@react-navigation/native';
-import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder } from 'expo-audio';
-import { Directory, File, Paths } from 'expo-file-system';
-import React, { useEffect, useState } from 'react';
+import { scaleFont } from "@/constants/ScaleFont";
+import { PermissionModal } from "@/constants/utils/permissionModal";
+import { PostAudio } from "@/hooks/api/PostAudio";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import Foundation from "@expo/vector-icons/Foundation";
+import { useNavigation } from "@react-navigation/native";
+import {
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
+} from "expo-audio";
+import { Directory, File, Paths } from "expo-file-system";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,19 +25,19 @@ import {
   Platform,
   Text,
   TouchableHighlight,
-  View
-} from 'react-native';
-import { useDispatch } from 'react-redux';
-import { styles } from './style';
-const ScreenWidth = Dimensions.get('window').width;
-const ScreenHeight = Dimensions.get('window').height;
+  View,
+} from "react-native";
+import { useDispatch } from "react-redux";
+import { styles } from "./style";
+const ScreenWidth = Dimensions.get("window").width;
+const ScreenHeight = Dimensions.get("window").height;
 
 export default function Record({ route }: any) {
   const { ClientId } = route.params ?? {};
   const { Path } = route.params ?? {};
   const [isRecording, setIsRecording] = useState(false);
   const [isRecordingStop, setIsRecordingStop] = useState(false);
-  const [recordingPath, setRecordingPath] = useState('');
+  const [recordingPath, setRecordingPath] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [URL, setURL] = useState<any | null>(null);
   const [loading, setloading] = useState(false);
@@ -43,13 +50,13 @@ export default function Record({ route }: any) {
   const status = useAudioPlayerStatus(player);
   const requestMicrophonePermission = async (): Promise<boolean> => {
     try {
-      if (Platform.OS === 'ios') {
+      if (Platform.OS === "ios") {
         const status = await AudioModule.requestRecordingPermissionsAsync();
         if (status.granted) {
-          console.log('Microphone permission granted');
+          console.log("Microphone permission granted");
           return true;
         } else {
-          console.log('Microphone permission denied');
+          console.log("Microphone permission denied");
           setPermissionModalVisible(true);
           return false;
         }
@@ -58,18 +65,18 @@ export default function Record({ route }: any) {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
-          title: 'Microphone Permission',
-          message: 'App needs access to your microphone.',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
+          title: "Microphone Permission",
+          message: "App needs access to your microphone.",
+          buttonNeutral: "Ask Me Later",
+          buttonNegative: "Cancel",
+          buttonPositive: "OK",
         },
       );
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        console.log('Microphone permission granted');
+        console.log("Microphone permission granted");
         return true;
       } else {
-        console.log('Microphone permission denied');
+        console.log("Microphone permission denied");
         setPermissionModalVisible(true);
         return false;
       }
@@ -82,47 +89,50 @@ export default function Record({ route }: any) {
   const generateFilePath = () => {
     const timestamp = new Date().getTime();
     const targetDirectory = new Directory(Paths.document);
-    const path =  Platform.OS === 'ios' ? `${targetDirectory.uri}/${timestamp}.m4a` : `${targetDirectory.uri}/${timestamp}.mp3`;
+    const path =
+      Platform.OS === "ios"
+        ? `${targetDirectory.uri}/${timestamp}.m4a`
+        : `${targetDirectory.uri}/${timestamp}.mp3`;
     setRecordingPath(path);
     console.log(path);
 
     return path;
   };
   const uploadAudio = async () => {
-    console.log('filr', URL);
-    const normalizedPath = URL.replace('file://', '');
+    console.log("filr", URL);
+    const normalizedPath = URL.replace("file://", "");
 
     try {
       // Check if the image file exists
       const audioExists = await new File(URL).info();
       if (!audioExists.exists) {
-        Alert.alert('Failed to get audio', 'Please record again');
-        console.error('audio file does not exist:', URL);
+        Alert.alert("Failed to get audio", "Please record again");
+        console.error("audio file does not exist:", URL);
         return;
       }
       const sourceFile = new File(URL);
       const targetFile = new File(recordingPath);
       await sourceFile.copy(targetFile);
-      console.log('Normalized Path:', targetFile.uri);
+      console.log("Normalized Path:", targetFile.uri);
 
       // Create FormData object
       const formData: any = new FormData();
-      formData.append('audio', {
+      formData.append("audio", {
         uri: `file://${targetFile.uri}`,
-        name: Platform.OS === 'ios' ? 'audio.m4a' : 'audio.mp3',
-        type: Platform.OS === 'ios' ? 'audio/mp4' : 'audio/mpeg',
+        name: Platform.OS === "ios" ? "audio.m4a" : "audio.mp3",
+        type: Platform.OS === "ios" ? "audio/mp4" : "audio/mpeg",
       });
-      formData.append('ClientID', ClientId);
+      formData.append("ClientID", ClientId);
       // Send the FormData object to the API
       const details = await PostAudio(formData, Path);
-      dispatch({ type: 'POST_AUDIO_SUCCESS', payload: details });
+      dispatch({ type: "POST_AUDIO_SUCCESS", payload: details });
       setloading(false);
       closeModal();
-      console.log('details', details);
+      console.log("details", details);
     } catch (error) {
       setUploadmodalVisible(false);
-      Alert.alert('Failed to upload audio', 'Please try again');
-      console.log('Error sharing audio with API:', error);
+      Alert.alert("Failed to upload audio", "Please try again");
+      console.log("Error sharing audio with API:", error);
     }
   };
   const onStartRecord = async () => {
@@ -134,7 +144,7 @@ export default function Record({ route }: any) {
       await setAudioModeAsync({
         playsInSilentMode: true,
         allowsRecording: true,
-        interruptionMode: 'mixWithOthers',
+        interruptionMode: "mixWithOthers",
         shouldPlayInBackground: false,
         shouldRouteThroughEarpiece: false,
       });
@@ -144,7 +154,7 @@ export default function Record({ route }: any) {
       setIsRecording(true);
       setIsRecordingStop(false);
     } catch (error) {
-      console.log('Error starting recording:', error);
+      console.log("Error starting recording:", error);
     }
   };
 
@@ -156,13 +166,13 @@ export default function Record({ route }: any) {
 
       const uri = audioRecorderPlayer.uri;
       if (uri) {
-        console.log('Recording saved at:', uri);
+        console.log("Recording saved at:", uri);
         setURL(uri);
       }
       setUploadmodalVisible(true);
     } catch (error) {
-      console.log('Error stopping recording:', error);
-      Alert.alert('Failed to stop recording.', 'Please try again!');
+      console.log("Error stopping recording:", error);
+      Alert.alert("Failed to stop recording.", "Please try again!");
     }
   };
 
@@ -174,28 +184,33 @@ export default function Record({ route }: any) {
       } catch (e) {
         // ignore
       }
-      console.log('stopped');
+      console.log("stopped");
       setIsPlaying(false);
       setIsRecordingStop(false);
       setUploadmodalVisible(true);
     } catch (error) {
-      console.log('Error stopping player:', error);
+      console.log("Error stopping player:", error);
     }
   };
 
   const onPlayRecord = async () => {
     try {
-      if (status.didJustFinish || (!status.playing && status.duration > 0 && status.currentTime >= status.duration)) {
-        try { await player.seekTo(0); } catch { }
+      if (
+        status.didJustFinish ||
+        (!status.playing &&
+          status.duration > 0 &&
+          status.currentTime >= status.duration)
+      ) {
+        try {
+          await player.seekTo(0);
+        } catch {}
       }
       setIsPlaying(true);
       player.play();
-
     } catch (error) {
-      console.log('Error playing recording:', error);
+      console.log("Error playing recording:", error);
     }
   };
-
 
   useEffect(() => {
     (async () => {
@@ -204,7 +219,7 @@ export default function Record({ route }: any) {
         await setAudioModeAsync({
           playsInSilentMode: true,
           allowsRecording: true,
-          interruptionMode: 'mixWithOthers',
+          interruptionMode: "mixWithOthers",
           shouldPlayInBackground: false,
           shouldRouteThroughEarpiece: false,
         });
@@ -216,20 +231,19 @@ export default function Record({ route }: any) {
   const closeModal = () => {
     setUploadmodalVisible(false);
     setIsRecording(false);
-    setRecordingPath('');
+    setRecordingPath("");
     setIsPlaying(false);
     setIsRecordingStop(false);
     navigation.goBack();
   };
 
   const alert = () => {
-    Alert.alert('Warning!', 'Please Record First');
+    Alert.alert("Warning!", "Please Record First");
   };
 
   useEffect(() => {
-
     const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
+      "hardwareBackPress",
       () => {
         // Exit the app when back button is pressed on Myform page
         navigation.goBack();
@@ -246,7 +260,7 @@ export default function Record({ route }: any) {
   }, [status.didJustFinish]);
   return (
     <View style={styles.container}>
-      <View >
+      <View>
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
             {isRecording ? (
@@ -254,9 +268,10 @@ export default function Record({ route }: any) {
                 style={{
                   marginTop: 30,
                   fontWeight: 600,
-                  color: 'black',
+                  color: "black",
                   fontSize: scaleFont(17),
-                }}>
+                }}
+              >
                 Recording in Progress
               </Text>
             ) : isPlaying ? (
@@ -264,9 +279,10 @@ export default function Record({ route }: any) {
                 style={{
                   marginTop: 30,
                   fontWeight: 600,
-                  color: 'black',
+                  color: "black",
                   fontSize: scaleFont(17),
-                }}>
+                }}
+              >
                 Playback is running
               </Text>
             ) : isRecordingStop ? (
@@ -274,47 +290,65 @@ export default function Record({ route }: any) {
                 style={{
                   marginTop: 30,
                   fontWeight: 600,
-                  color: 'black',
+                  color: "black",
                   fontSize: scaleFont(17),
-                }}>
-                Record stoped{' '}
+                }}
+              >
+                Record stoped{" "}
               </Text>
             ) : (
               <Text
                 style={{
                   marginTop: 30,
                   fontWeight: 600,
-                  color: 'black',
+                  color: "black",
                   fontSize: scaleFont(16),
-                }}>
+                }}
+              >
                 Click to start record
               </Text>
             )}
-            <View style={{ flexDirection: 'row', gap: 50, left: 40, top: 50 }}>
-              <FontAwesome5 name="stop-circle" size={40} color={isRecording ? 'red' : 'grey'}
-                style={{ alignSelf: 'center' }}
+            <View style={{ flexDirection: "row", gap: 50, left: 40, top: 50 }}>
+              <FontAwesome5
+                name="stop-circle"
+                size={40}
+                color={isRecording ? "red" : "grey"}
+                style={{ alignSelf: "center" }}
                 onPress={isRecording ? onStopRecord : alert}
               />
 
-              <Foundation name="record" size={50} color={!isRecording ? 'red' : 'grey'}
-                style={{ alignSelf: 'center' }}
+              <Foundation
+                name="record"
+                size={50}
+                color={!isRecording ? "red" : "grey"}
+                style={{ alignSelf: "center" }}
                 onPress={!isRecording ? onStartRecord : alert}
               />
 
               {isPlaying ? (
-                <FontAwesome5 name="pause-circle" size={38} color={isPlaying ? 'red' : 'grey'}
-                  style={{ alignSelf: 'center' }}
+                <FontAwesome5
+                  name="pause-circle"
+                  size={38}
+                  color={isPlaying ? "red" : "grey"}
+                  style={{ alignSelf: "center" }}
                   onPress={isPlaying ? onStopPlayback : alert}
                 />
               ) : (
-                <FontAwesome5 name="play-circle" size={38} color={isRecordingStop ? 'red' : 'grey'}
-                  style={{ alignSelf: 'center' }}
+                <FontAwesome5
+                  name="play-circle"
+                  size={38}
+                  color={isRecordingStop ? "red" : "grey"}
+                  style={{ alignSelf: "center" }}
                   onPress={isRecordingStop ? onPlayRecord : alert}
                 />
               )}
-              <AntDesign name="close-circle" size={30} color="black" style={{ bottom: 110, right: 50 }}
-                onPress={closeModal} />
-
+              <AntDesign
+                name="close-circle"
+                size={30}
+                color="black"
+                style={{ bottom: 110, right: 50 }}
+                onPress={closeModal}
+              />
             </View>
           </View>
         </View>
@@ -326,30 +360,32 @@ export default function Record({ route }: any) {
           visible={Uploadmodal}
           onRequestClose={() => {
             setUploadmodalVisible(!Uploadmodal);
-          }}>
+          }}
+        >
           <View style={styles.centeredView}>
             <View style={styles.modalView}>
               {loading ? (
                 <>
                   <ActivityIndicator size="large" color="#00ff00" />
-                  <Text style={{ color: 'black', fontSize: scaleFont(17) }}>
+                  <Text style={{ color: "black", fontSize: scaleFont(17) }}>
                     Please wait your audio is Uploading
                   </Text>
                 </>
               ) : (
                 <>
-                  <Text style={{ color: 'black', fontSize: scaleFont(17) }}>
+                  <Text style={{ color: "black", fontSize: scaleFont(17) }}>
                     Click to upload your audio
                   </Text>
                   <View
                     style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-evenly',
+                      flexDirection: "row",
+                      justifyContent: "space-evenly",
                       gap: 50,
-                    }}>
+                    }}
+                  >
                     <TouchableHighlight
                       style={{
-                        backgroundColor: '#ff6d60',
+                        backgroundColor: "#ff6d60",
                         width: 100,
                         marginTop: scaleFont(30),
                       }}
@@ -357,13 +393,23 @@ export default function Record({ route }: any) {
                         setUploadmodalVisible(false);
                       }}
                     >
-                      <View style={{ alignItems: 'center', justifyContent: 'center', padding: 10 }}>
-                        <Text style={{ fontSize: scaleFont(17), color: '#fff' }}>Cancel</Text>
+                      <View
+                        style={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 10,
+                        }}
+                      >
+                        <Text
+                          style={{ fontSize: scaleFont(17), color: "#fff" }}
+                        >
+                          Cancel
+                        </Text>
                       </View>
                     </TouchableHighlight>
                     <TouchableHighlight
                       style={{
-                        backgroundColor: '#008541',
+                        backgroundColor: "#008541",
                         width: 100,
                         marginTop: scaleFont(30),
                       }}
@@ -372,8 +418,18 @@ export default function Record({ route }: any) {
                         uploadAudio();
                       }}
                     >
-                      <View style={{ alignItems: 'center', justifyContent: 'center', padding: 10 }}>
-                        <Text style={{ fontSize: scaleFont(17), color: '#fff' }}>Upload</Text>
+                      <View
+                        style={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 10,
+                        }}
+                      >
+                        <Text
+                          style={{ fontSize: scaleFont(17), color: "#fff" }}
+                        >
+                          Upload
+                        </Text>
                       </View>
                     </TouchableHighlight>
                   </View>
@@ -383,8 +439,10 @@ export default function Record({ route }: any) {
           </View>
         </Modal>
       </View>
-      <PermissionModal visible={permissionModalVisible} onClose={() => setPermissionModalVisible(false)} />
+      <PermissionModal
+        visible={permissionModalVisible}
+        onClose={() => setPermissionModalVisible(false)}
+      />
     </View>
   );
 }
-

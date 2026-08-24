@@ -1,14 +1,7 @@
 import { scaleFont } from "@/constants/ScaleFont";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import {
-  Alert,
-  Image,
-  ImageBackground,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, Text, TouchableOpacity, View } from "react-native";
 import { OneSignal } from "react-native-onesignal";
 import { styles } from "./style";
 
@@ -34,35 +27,26 @@ export default function PermissionScreenIOS() {
   }
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/permission.png")}
-      style={styles.ImageBackground}
-      resizeMode="cover"
-    >
-      <View style={{ flex: 1, alignItems: "center" }}>
-        <View style={{ marginTop: scaleFont(120) }}>
-          <Image
-            source={require("../../assets/images/Logo.png")}
-            style={styles.Logo}
-          />
-        </View>
-
-        <View style={styles.textContainer}>
-          <Text style={styles.text1}>Permission Needed</Text>
-          <Text style={styles.text2}>
-            Please allow the app to function properly by granting the required
-            permissions. Thanks!
-          </Text>
-        </View>
-        <View style={{ marginTop: 40 }}>
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={() => checkPermission()}
-          >
-            <Text style={styles.btnText}>Allow</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={{ flex: 1, alignItems: "center" }}>
+      <View style={{ marginTop: scaleFont(120) }}>
+        <Image
+          source={require("../../assets/images/Logo.png")}
+          style={styles.Logo}
+        />
       </View>
-    </ImageBackground>
+
+      <View style={styles.textContainer}>
+        <Text style={styles.text1}>Permission Needed</Text>
+        <Text style={styles.text2}>
+          Please allow the app to function properly by granting the required
+          permissions. Thanks!
+        </Text>
+      </View>
+      <View style={{ marginTop: 40 }}>
+        <TouchableOpacity style={styles.btn} onPress={() => checkPermission()}>
+          <Text style={styles.btnText}>Allow</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }

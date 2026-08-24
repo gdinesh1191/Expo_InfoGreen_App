@@ -1,48 +1,64 @@
-import { postUserDetails } from '@/hooks/api/postUserDetails';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import Entypo from '@expo/vector-icons/Entypo';
-import Feather from '@expo/vector-icons/Feather';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, BackHandler, Dimensions, Image, KeyboardAvoidingView, Modal, PermissionsAndroid, Platform, ScrollView, Text, TextInput, TouchableHighlight, TouchableOpacity, View } from 'react-native';
-import { OneSignal } from 'react-native-onesignal';
+import { postUserDetails } from "@/hooks/api/postUserDetails";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Entypo from "@expo/vector-icons/Entypo";
+import Feather from "@expo/vector-icons/Feather";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
+import { useNavigation } from "@react-navigation/native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  PermissionsAndroid,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableHighlight,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { OneSignal } from "react-native-onesignal";
 
-import { PermissionModal } from '@/constants/utils/permissionModal';
-import { CameraType, CameraView } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import DeviceInfo from 'react-native-device-info';
-import { useDispatch, useSelector } from 'react-redux';
-import { styles } from './style';
-const ScreenHeight = Dimensions.get('window').height;
+import { PermissionModal } from "@/constants/utils/permissionModal";
+import { CameraType, CameraView } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
+import DeviceInfo from "react-native-device-info";
+import { useDispatch, useSelector } from "react-redux";
+import { styles } from "./style";
+const ScreenHeight = Dimensions.get("window").height;
 export default function Login() {
   const navigation = useNavigation<any>();
-  const [name, setName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [appCode, setAppCode] = useState('');
-  const [nameError, setNameError] = useState('');
-  const [companyNameError, setCompanyNameError] = useState('');
-  const [mobileNumberError, setMobileNumberError] = useState('');
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [appCode, setAppCode] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [companyNameError, setCompanyNameError] = useState("");
+  const [mobileNumberError, setMobileNumberError] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [AndroidID, setAndroidID] = useState('');
+  const [AndroidID, setAndroidID] = useState("");
   const dispatch = useDispatch();
   const currentDate = new Date();
   const secretKey =
-    'InfoGreen#!@#$%' +
-    currentDate.getHours().toString().padStart(2, '0') +
-    currentDate.getMinutes().toString().padStart(2, '0');
-  const plaintext = 'InfoGreen_App';
+    "InfoGreen#!@#$%" +
+    currentDate.getHours().toString().padStart(2, "0") +
+    currentDate.getMinutes().toString().padStart(2, "0");
+  const plaintext = "InfoGreen_App";
   const isLoading = useSelector((state: any) => state.user.loading); // handle notification
   const [visible, setisvisible] = useState(false);
-  const [facing, setFacing] = useState<CameraType>('back');
+  const [facing, setFacing] = useState<CameraType>("back");
   const [scanned, setScanned] = useState(false);
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
   useEffect(() => {
-    getAllDeviceInfo()
+    getAllDeviceInfo();
   }, []);
 
   const [image, setImage] = useState<string | null>(null);
@@ -55,7 +71,7 @@ export default function Login() {
     // }
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
+      mediaTypes: ["images", "videos"],
       allowsEditing: false,
       aspect: [4, 3],
       quality: 1,
@@ -65,25 +81,26 @@ export default function Login() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
-      scanQRCodeFromFile(result.assets[0].uri)
+      scanQRCodeFromFile(result.assets[0].uri);
     }
   };
   const scanQRCodeFromFile = async (uri: string) => {
-    if (Platform.OS !== 'android') {
+    if (Platform.OS !== "android") {
       return;
     }
 
     try {
-      const BarcodeScanning = require('@react-native-ml-kit/barcode-scanning').default;
+      const BarcodeScanning =
+        require("@react-native-ml-kit/barcode-scanning").default;
       const barcodes = await BarcodeScanning.scan(uri);
       if (barcodes.length > 0) {
-        console.log('QR Data:', barcodes[0].value);
+        console.log("QR Data:", barcodes[0].value);
         handleQRCodeScan(barcodes[0].value);
       } else {
-        alert('No QR code detected in this image.');
+        alert("No QR code detected in this image.");
       }
     } catch (error) {
-      console.error('QR Scan Error:', error);
+      console.error("QR Scan Error:", error);
     }
   };
   useEffect(() => {
@@ -91,7 +108,6 @@ export default function Login() {
       setScanned(false);
     }
   }, [isCameraOpen]);
-
 
   const getAllDeviceInfo = async () => {
     try {
@@ -115,7 +131,7 @@ export default function Login() {
         productName,
         applicationVersion,
         appName,
-        uniqueId
+        uniqueId,
       ] = await Promise.all([
         DeviceInfo.getApiLevel(),
         DeviceInfo.getAndroidId(),
@@ -136,7 +152,7 @@ export default function Login() {
         DeviceInfo.getProduct(),
         DeviceInfo.getVersion(),
         DeviceInfo.getApplicationName(),
-        DeviceInfo.getUniqueId()
+        DeviceInfo.getUniqueId(),
       ]);
 
       const deviceInfo = {
@@ -159,18 +175,18 @@ export default function Login() {
         productName,
         applicationVersion,
         appName,
-        uniqueId
+        uniqueId,
       };
       setDeviceInfo(deviceInfo);
     } catch (error) {
-      console.error('Error getting device info:', error);
+      console.error("Error getting device info:", error);
     }
   };
 
   const checkNetworkStatus = () => {
-    NetInfo.fetch().then(state => {
+    NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        navigation.navigate('Network'); // Navigate to network error page
+        navigation.navigate("Network"); // Navigate to network error page
       } else {
         saveUserDetails();
       }
@@ -178,7 +194,7 @@ export default function Login() {
   };
 
   const checkPermissions = async () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       const { granted } = await ImagePicker.getCameraPermissionsAsync();
       if (granted) {
         setIsCameraOpen(true);
@@ -186,11 +202,12 @@ export default function Login() {
       }
 
       setIsCameraOpen(false);
-      const { granted: requestGranted } = await ImagePicker.requestCameraPermissionsAsync();
+      const { granted: requestGranted } =
+        await ImagePicker.requestCameraPermissionsAsync();
       if (requestGranted) {
         setIsCameraOpen(true);
       } else {
-        console.log('Permission denied');
+        console.log("Permission denied");
         setPermissionModalVisible(true);
       }
       return;
@@ -201,20 +218,18 @@ export default function Login() {
     );
     if (!granted) {
       setIsCameraOpen(false);
-      PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-      ).then(granted => {
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          setIsCameraOpen(true);
-        }
-        else {
-          console.log("Permission denied");
-          setIsCameraOpen(false);
-          setPermissionModalVisible(true);
-        }
-      });
-    }
-    else {
+      PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA).then(
+        (granted) => {
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            setIsCameraOpen(true);
+          } else {
+            console.log("Permission denied");
+            setIsCameraOpen(false);
+            setPermissionModalVisible(true);
+          }
+        },
+      );
+    } else {
       setIsCameraOpen(true);
     }
   };
@@ -266,44 +281,40 @@ export default function Login() {
 
   // getting androidID
 
-
-
-
   // Saving the user details and posting it into api
   const saveUserDetails = async () => {
-
     try {
       // Checking input field
       let isError = false;
 
       if (!name) {
-        setNameError('Name is required');
+        setNameError("Name is required");
         isError = true;
       } else {
-        setNameError('');
+        setNameError("");
       }
 
       if (!companyName) {
-        setCompanyNameError('Company name is required');
+        setCompanyNameError("Company name is required");
         isError = true;
       } else {
-        setCompanyNameError('');
+        setCompanyNameError("");
       }
 
       if (!mobileNumber) {
-        setMobileNumberError('Mobile number is required');
+        setMobileNumberError("Mobile number is required");
         isError = true;
       } else {
-        setMobileNumberError('');
+        setMobileNumberError("");
       }
 
       if (!isError) {
         // Geting SUBSCRIPTION ID
-        const id =
-          await OneSignal.User.pushSubscription.getIdAsync();
+        const id = await OneSignal.User.pushSubscription.getIdAsync();
 
         // Storing to local storage
-        const userId = Platform.OS === "ios" ? deviceInfo?.uniqueId : deviceInfo?.androidID;
+        const userId =
+          Platform.OS === "ios" ? deviceInfo?.uniqueId : deviceInfo?.androidID;
         console.log(id);
         const userDetails = {
           userId,
@@ -319,20 +330,23 @@ export default function Login() {
         };
         // console.log(userDetails);
 
-        await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
+        await AsyncStorage.setItem("userDetails", JSON.stringify(userDetails));
         setisvisible(true);
         // store to server useing axios post method under the keyword of "userDetails"
         const details = await postUserDetails(userDetails);
-        dispatch({ type: 'POST_USER_SUCCESS', payload: details });
+        dispatch({ type: "POST_USER_SUCCESS", payload: details });
         // console.log("details", details);
         // navigation.navigate('Webview');
         // Alert.alert('Success', 'User details stored successfully');
       }
     } catch (error) {
-      console.error('Error saving user details:', error);
+      console.error("Error saving user details:", error);
       setisvisible(false);
-      dispatch({ type: 'POST_USER_FAILURE', payload: error });
-      Alert.alert('Network Error', 'Unable to connect to the server. Please check your internet connection and try again.');
+      dispatch({ type: "POST_USER_FAILURE", payload: error });
+      Alert.alert(
+        "Network Error",
+        "Unable to connect to the server. Please check your internet connection and try again.",
+      );
     }
   };
   // const codeScanner = useCodeScanner({
@@ -344,8 +358,7 @@ export default function Login() {
   // Handle QRcode for auto filling user details
   const handleQRCodeScan = async (data: any) => {
     try {
-      const id =
-        await OneSignal.User.pushSubscription.getIdAsync();
+      const id = await OneSignal.User.pushSubscription.getIdAsync();
       const scannedData = JSON.parse(data);
       setIsCameraOpen(false);
       const userDetails = {
@@ -360,36 +373,34 @@ export default function Login() {
       };
       const state = await NetInfo.fetch();
       if (!state.isConnected) {
-        navigation.navigate('Network'); // Navigate to network error page
+        navigation.navigate("Network"); // Navigate to network error page
       } else {
-        await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
+        await AsyncStorage.setItem("userDetails", JSON.stringify(userDetails));
         setisvisible(true);
         // store to server useing axios post method under the keyword of "userDetails"
         const details = await postUserDetails(userDetails);
-        dispatch({ type: 'POST_USER_SUCCESS', payload: details });
+        dispatch({ type: "POST_USER_SUCCESS", payload: details });
       }
     } catch (error) {
-      console.error('Error saving scanned QR code data:', error);
+      console.error("Error saving scanned QR code data:", error);
       setisvisible(false);
-      dispatch({ type: 'POST_USER_FAILURE', payload: error });
-      Alert.alert('Network Error', 'Unable to connect to the server. Please check your internet connection and try again.');
+      dispatch({ type: "POST_USER_FAILURE", payload: error });
+      Alert.alert(
+        "Network Error",
+        "Unable to connect to the server. Please check your internet connection and try again.",
+      );
     }
   };
 
   // handle BackButton for moving back to the previous page or exit app.
   useEffect(() => {
-
-
     const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
+      "hardwareBackPress",
       () => {
         navigation.goBack();
         return true;
       },
     );
-
-
-
 
     return () => backHandler.remove();
   }, []);
@@ -397,20 +408,20 @@ export default function Login() {
   return (
     <View style={styles.background}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
-          
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Illustration Image */}
           <View style={styles.imageContainer}>
             <Image
               style={styles.illustrationImage}
-              source={require('../../assets/images/Logo.png')}
+              source={require("../../assets/images/Logo.png")}
               resizeMode="contain"
             />
           </View>
@@ -418,88 +429,121 @@ export default function Login() {
           {/* Card Container with Form */}
           <View style={styles.cardContainer}>
             <View style={styles.formContainer}>
-              
               {/* Name Input */}
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>Name</Text>
                 <View style={styles.inputContainer}>
-                  <Entypo name="user" size={20} color="#6B7280" style={styles.inputIcon} />
-                  
+                  <Entypo
+                    name="user"
+                    size={20}
+                    color="#6B7280"
+                    style={styles.inputIcon}
+                  />
+
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your name"
                     placeholderTextColor="#9CA3AF"
                     value={name}
                     keyboardType="default"
-                    onChangeText={text => {
-                      let filteredText = text.replace(/[^a-zA-Z\s]/g, '').replace(/\s{2,}/g, ' ');
-                      filteredText = filteredText.replace(/\b\w/g, char => char.toUpperCase());
+                    onChangeText={(text) => {
+                      let filteredText = text
+                        .replace(/[^a-zA-Z\s]/g, "")
+                        .replace(/\s{2,}/g, " ");
+                      filteredText = filteredText.replace(/\b\w/g, (char) =>
+                        char.toUpperCase(),
+                      );
                       setName(filteredText);
-                      setNameError('');
+                      setNameError("");
                     }}
-                    onFocus={() => setNameError('')}
+                    onFocus={() => setNameError("")}
                   />
                 </View>
-                {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+                {nameError ? (
+                  <Text style={styles.errorText}>{nameError}</Text>
+                ) : null}
               </View>
 
               {/* Company Name Input */}
               <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Company / Institution Name</Text>
+                <Text style={styles.inputLabel}>
+                  Company / Institution Name
+                </Text>
                 <View style={styles.inputContainer}>
-                  <MaterialCommunityIcons name="office-building" size={20} color="#6B7280" style={styles.inputIcon} />
-                  
+                  <MaterialCommunityIcons
+                    name="office-building"
+                    size={20}
+                    color="#6B7280"
+                    style={styles.inputIcon}
+                  />
+
                   <TextInput
                     style={styles.input}
                     placeholder="company / institution name"
                     placeholderTextColor="#9CA3AF"
                     value={companyName}
                     keyboardType="default"
-                    onChangeText={text => {
-                      let filteredText = text.replace(/[^a-zA-Z\s]/g, '').replace(/\s{2,}/g, ' ');
-                      filteredText = filteredText.replace(/\b\w/g, char => char.toUpperCase());
+                    onChangeText={(text) => {
+                      let filteredText = text
+                        .replace(/[^a-zA-Z\s]/g, "")
+                        .replace(/\s{2,}/g, " ");
+                      filteredText = filteredText.replace(/\b\w/g, (char) =>
+                        char.toUpperCase(),
+                      );
                       setCompanyName(filteredText);
-                      setCompanyNameError('');
+                      setCompanyNameError("");
                     }}
-                    onFocus={() => setCompanyNameError('')}
+                    onFocus={() => setCompanyNameError("")}
                   />
                 </View>
-                {companyNameError ? <Text style={styles.errorText}>{companyNameError}</Text> : null}
+                {companyNameError ? (
+                  <Text style={styles.errorText}>{companyNameError}</Text>
+                ) : null}
               </View>
 
               {/* Phone Number Input */}
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>Phone No</Text>
                 <View style={styles.inputContainer}>
-                  <Feather name="phone" size={20} color="#6B7280" style={styles.inputIcon} />
-                  
+                  <Feather
+                    name="phone"
+                    size={20}
+                    color="#6B7280"
+                    style={styles.inputIcon}
+                  />
+
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your mobile number"
                     placeholderTextColor="#9CA3AF"
                     keyboardType="numeric"
                     value={mobileNumber}
-                    onChangeText={text => {
-                      const filteredText = text.replace(/[^0-9]/g, '').slice(0, 10);
+                    onChangeText={(text) => {
+                      const filteredText = text
+                        .replace(/[^0-9]/g, "")
+                        .slice(0, 10);
                       setMobileNumber(filteredText);
-                      setMobileNumberError('');
+                      setMobileNumberError("");
                     }}
                     maxLength={10}
-                    onFocus={() => setMobileNumberError('')}
+                    onFocus={() => setMobileNumberError("")}
                   />
                 </View>
-                {mobileNumberError ? <Text style={styles.errorText}>{mobileNumberError}</Text> : null}
+                {mobileNumberError ? (
+                  <Text style={styles.errorText}>{mobileNumberError}</Text>
+                ) : null}
               </View>
 
               {/* Register Button */}
               <TouchableHighlight
                 style={styles.createAccountButton}
                 onPress={checkNetworkStatus}
-                underlayColor={'#007a2a'}>
+                underlayColor={"#007a2a"}
+              >
                 <Text style={styles.createAccountButtonText}>Register</Text>
               </TouchableHighlight>
 
-              {Platform.OS === 'android' && (
+              {Platform.OS === "android" && (
                 <>
                   {/* OR Divider */}
                   <View style={styles.orDividerContainer}>
@@ -512,9 +556,14 @@ export default function Login() {
                   <TouchableHighlight
                     style={styles.scanQRButton}
                     onPress={checkPermissions}
-                    underlayColor={'#f3f4f6'}>
+                    underlayColor={"#f3f4f6"}
+                  >
                     <View style={styles.scanQRButtonContent}>
-                      <MaterialCommunityIcons name="qrcode-scan" size={20} color="#008541" />
+                      <MaterialCommunityIcons
+                        name="qrcode-scan"
+                        size={20}
+                        color="#008541"
+                      />
                       <Text style={styles.scanQRButtonText}>Scan QR Code</Text>
                     </View>
                   </TouchableHighlight>
@@ -525,25 +574,28 @@ export default function Login() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-
-      {Platform.OS === 'android' && isCameraOpen && (
+      {Platform.OS === "android" && isCameraOpen && (
         <Modal
           visible={isCameraOpen}
           onRequestClose={() => setIsCameraOpen(!isCameraOpen)}
-          animationType="slide" >
+          animationType="slide"
+        >
           <View style={styles.cameraContainer}>
-
             <View style={styles.cameraHeader}>
               <Text style={styles.barcodeText}>BarCode Scanner</Text>
 
-              <AntDesign name="close-circle" size={30} color={'#fff'} onPress={() => setIsCameraOpen(false)} />
-
+              <AntDesign
+                name="close-circle"
+                size={30}
+                color={"#fff"}
+                onPress={() => setIsCameraOpen(false)}
+              />
             </View>
             <View style={styles.camerabordercontainer}>
               <CameraView
                 style={styles.cameraPreview}
                 facing={facing}
-                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
                 onBarcodeScanned={(result: any) => {
                   if (scanned) return;
                   setScanned(true);
@@ -565,29 +617,37 @@ export default function Login() {
                   style={styles.uploadButton}
                   onPress={pickImage}
                 >
-                  <Feather name="image" size={20} color={'#000'} style={{ marginRight: 8 }} />
-                  <Text style={styles.uploadButtonText}>Upload from gallery</Text>
+                  <Feather
+                    name="image"
+                    size={20}
+                    color={"#000"}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={styles.uploadButtonText}>
+                    Upload from gallery
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         </Modal>
-
       )}
 
       <Modal
         animationType="slide"
         transparent={true}
         visible={visible}
-        onRequestClose={isLoading}>
+        onRequestClose={isLoading}
+      >
         <View style={styles.modalView}>
           <ActivityIndicator size="large" color="#00ff00" />
         </View>
       </Modal>
-      
-      <PermissionModal visible={permissionModalVisible} onClose={() => setPermissionModalVisible(false)} />
+
+      <PermissionModal
+        visible={permissionModalVisible}
+        onClose={() => setPermissionModalVisible(false)}
+      />
     </View>
   );
-};
-
-
+}

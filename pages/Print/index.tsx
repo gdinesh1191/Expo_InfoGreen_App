@@ -46,7 +46,7 @@ export default function Print({ route }: any) {
       () => {
         navigation.goBack();
         return true;
-      }
+      },
     );
     return () => backHandler.remove();
   }, []);
@@ -128,7 +128,7 @@ export default function Print({ route }: any) {
       } catch (tmpErr) {
         console.warn(
           "tmpfile capture/copy failed, falling back to base64:",
-          tmpErr
+          tmpErr,
         );
         // fall through to base64 approach
       }
@@ -238,7 +238,7 @@ export default function Print({ route }: any) {
         if (!whatsappAvailable) {
           Alert.alert(
             "WhatsApp not installed",
-            "Cannot share via WhatsApp because the app is not installed."
+            "Cannot share via WhatsApp because the app is not installed.",
           );
           return;
         }
@@ -386,7 +386,9 @@ export default function Print({ route }: any) {
         onLayout={onViewShotLayout}
       >
         <Pdf
-          source={{ uri: Platform.OS === "ios" ? pdfFilePath : `file://${pdfFilePath}` }}
+          source={{
+            uri: Platform.OS === "ios" ? pdfFilePath : `file://${pdfFilePath}`,
+          }}
           onLoadComplete={(numberOfPages: number, filePath: string) => {
             console.log(`Number of pages: ${numberOfPages}`, filePath);
           }}
@@ -492,7 +494,7 @@ export default function Print({ route }: any) {
 
               <TouchableOpacity
                 disabled={isSharing}
-                onPress={ sharePDF}
+                onPress={sharePDF}
                 style={{
                   flexDirection: "row",
                   gap: 10,

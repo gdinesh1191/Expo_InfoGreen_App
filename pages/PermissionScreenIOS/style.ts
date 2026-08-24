@@ -41,7 +41,7 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: scaleFont(20),
     fontFamily: "Poppins-Light",
-    fontWeight: 600,
+    fontWeight: "600",
     lineHeight: 25,
     color: "black",
   },
