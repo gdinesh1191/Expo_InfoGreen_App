@@ -7,10 +7,10 @@ import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.LinearLayout;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import android.view.Window;
 import android.app.KeyguardManager;
 import android.content.Context;
@@ -69,16 +69,12 @@ public class ReminderActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_reminder);
 
-        GradientDrawable gradientDrawable = new GradientDrawable(
-            GradientDrawable.Orientation.TL_BR,
-            new int[] {
-                Color.parseColor("#006666"),
-                Color.parseColor("#000000")
-            }
-        );
-
-        LinearLayout rootLayout = findViewById(R.id.rootLayout);
-        rootLayout.setBackground(gradientDrawable);
+        window.setStatusBarColor(Color.parseColor("#E3F4E9"));
+        window.setNavigationBarColor(Color.WHITE);
+        WindowInsetsControllerCompat insetsController =
+            WindowCompat.getInsetsController(window, window.getDecorView());
+        insetsController.setAppearanceLightStatusBars(true);
+        insetsController.setAppearanceLightNavigationBars(true);
 
         titleText = findViewById(R.id.titleText);
         messageText = findViewById(R.id.messageText);
@@ -90,13 +86,13 @@ public class ReminderActivity extends AppCompatActivity {
         startAlarmSound();
 
         snoozeButton.setOnClickListener(v -> {
-            handleReminderAction("onSnooze", "snooze");
+            // handleReminderAction("onSnooze", "snooze");
             stopAlarmSound();
             finish();
         });
 
         dismissButton.setOnClickListener(v -> {
-            handleReminderAction("onDismiss", "dismiss");
+            // handleReminderAction("onDismiss", "dismiss");
             stopAlarmSound();
             finish();
         });

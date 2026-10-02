@@ -69,7 +69,8 @@ export default function PermissionScreen() {
             ],
           );
         } else {
-          setLocationGuideVisible(true);
+          // setLocationGuideVisible(true);
+          navigation.navigate("Webview");
         }
       }
     } catch (err) {

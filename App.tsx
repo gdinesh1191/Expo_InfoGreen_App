@@ -23,6 +23,8 @@ import { Provider, useSelector } from "react-redux";
 import AuthStackNavigator from "./app/AuthStackNavigator";
 import MainNavigator from "./app/MainNavigator";
 import {
+  ensureBatteryOptimizationExemption,
+  ensureOverlayPermission,
   listenReminderButtonAction,
   showReminder,
 } from "./hooks/BackgroundReminder/ReminderModule";
@@ -103,15 +105,15 @@ function Root() {
   useEffect(() => {
     // Ask native permissions/capabilities when app opens (Android only).
     // Each helper checks first and opens settings only if required.
-    // (async () => {
-    //   try {
-    //     await ensureOverlayPermission();
-    //     await ensureExactAlarmPermission();
-    //     await ensureBatteryOptimizationExemption();
-    //   } catch (e) {
-    //     console.log("Reminder permissions check failed:", e);
-    //   }
-    // })();
+    (async () => {
+      try {
+        await ensureOverlayPermission();
+        // await ensureExactAlarmPermission();
+        await ensureBatteryOptimizationExemption();
+      } catch (e) {
+        console.log("Reminder permissions check failed:", e);
+      }
+    })();
 
     OneSignal.Debug.setLogLevel(LogLevel.Verbose);
 
