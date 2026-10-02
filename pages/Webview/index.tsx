@@ -31,10 +31,10 @@ import { Directory, File, Paths } from "expo-file-system";
 import { styles } from "./style";
 
 import { PermissionModal } from "@/constants/utils/permissionModal";
+// import { postLoadDetails } from "@/hooks/api/postLoadDetails";
 import { postUserDetails } from "@/hooks/api/postUserDetails";
 // import { startReminderService } from "@/hooks/BackgroundReminder";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import NetInfo from "@react-native-community/netinfo";
 import { useShareIntent } from "expo-share-intent";
 import DeviceInfo from "react-native-device-info";
 export default function Webview() {
@@ -91,6 +91,7 @@ export default function Webview() {
   const loadStartTime = useRef<number | null>(null);
   const slowLoadMetrics = useRef<Record<string, unknown>[]>([]);
   const pendingSlowLoad = useRef<Record<string, unknown> | null>(null);
+  const isSyncingLoadDetails = useRef(false);
   // Function to check network status if network is not detected it navigate to network page
 
   // const callHtmlFunction = () => {
@@ -173,23 +174,6 @@ export default function Webview() {
       postUserDetailsData();
     }
   }, [deviceInfo]);
-
-  useEffect(() => {
-    const loadStoredDetails = async () => {
-      try {
-        const stored = await AsyncStorage.getItem("loadDetails");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            slowLoadMetrics.current = parsed;
-          }
-        }
-      } catch (e) {
-        console.log("Failed to load loadDetails:", e);
-      }
-    };
-    loadStoredDetails();
-  }, []);
 
   const getAllDeviceInfo = async () => {
     try {
@@ -574,132 +558,231 @@ export default function Webview() {
     return () => backHandler.remove();
   }, []);
 
-  const getNetworkInfo = async () => {
-    const netState = await NetInfo.fetch();
+  // page Loding error details to local DB and server.
 
-    let carrier = "Unknown";
-    let generation = "Unknown";
+  // useEffect(() => {
+  //   const loadStoredDetails = async () => {
+  //     try {
+  //       const stored = await AsyncStorage.getItem("loadDetails");
+  //       if (stored) {
+  //         const parsed = JSON.parse(stored);
+  //         if (Array.isArray(parsed)) {
+  //           slowLoadMetrics.current = parsed;
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.log("Failed to load loadDetails:", e);
+  //     }
+  //     await syncStoredLoadDetails();
+  //   };
+  //   loadStoredDetails();
 
-    try {
-      carrier = await DeviceInfo.getCarrier();
-    } catch (e) {
-      console.log("Carrier error:", e);
-    }
+  //   const appOpenSubscription = AppState.addEventListener(
+  //     "change",
+  //     (nextAppState) => {
+  //       if (nextAppState === "active") {
+  //         syncStoredLoadDetails();
+  //       }
+  //     },
+  //   );
 
-    if (netState.type === "cellular") {
-      generation = netState.details?.cellularGeneration || "Unknown";
-    }
+  //   return () => {
+  //     appOpenSubscription.remove();
+  //   };
+  // }, []);
 
-    return {
-      carrier,
-      connectionType: netState.type,
-      generation,
-      isConnected: netState.isConnected,
-      isInternetReachable: netState.isInternetReachable,
-    };
-  };
-  const getFormattedDateTime = () => {
-    const now = new Date();
+  // const getNetworkInfo = async () => {
+  //   const netState = await NetInfo.fetch();
 
-    const day = String(now.getDate()).padStart(2, "0");
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const year = now.getFullYear();
+  //   let carrier = "Unknown";
+  //   let generation = "Unknown";
 
-    const time = now.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
+  //   try {
+  //     carrier = await DeviceInfo.getCarrier();
+  //   } catch (e) {
+  //     console.log("Carrier error:", e);
+  //   }
 
-    return `${day}/${month}/${year} ${time}`;
-  };
+  //   if (netState.type === "cellular") {
+  //     generation = netState.details?.cellularGeneration || "Unknown";
+  //   }
 
-  const handleLoadStart = (event: any) => {
-    const loadingUrl = event.nativeEvent.url;
+  //   return {
+  //     carrier,
+  //     connectionType: netState.type,
+  //     generation,
+  //     isConnected: netState.isConnected,
+  //     isInternetReachable: netState.isInternetReachable,
+  //   };
+  // };
+  // const isLoadDetailsPostSuccess = (data: any) => {
+  //   if (data == null) return true;
+  //   if (typeof data === "string") {
+  //     const normalized = data.trim().toLowerCase();
+  //     if (!normalized) return true;
+  //     return (
+  //       normalized === "success" ||
+  //       normalized === "ok" ||
+  //       normalized.includes("success")
+  //     );
+  //   }
+  //   if (typeof data === "object") {
+  //     if (data.success === false) return false;
+  //     if (typeof data.status === "string") {
+  //       const status = data.status.toLowerCase();
+  //       if (status === "error" || status === "fail" || status === "failed") {
+  //         return false;
+  //       }
+  //     }
+  //   }
+  //   return true;
+  // };
 
-    // New navigation
-    loadId.current += 1;
+  // const syncStoredLoadDetails = async () => {
+  //   if (isSyncingLoadDetails.current) return;
 
-    const currentLoadId = loadId.current;
+  //   isSyncingLoadDetails.current = true;
+  //   try {
+  //     const netState = await NetInfo.fetch();
+  //     if (!netState.isConnected || netState.isInternetReachable === false) {
+  //       return;
+  //     }
 
-    // Store load start time
-    loadStartTime.current = Date.now();
-    pendingSlowLoad.current = null;
+  //     const stored = await AsyncStorage.getItem("loadDetails");
+  //     if (!stored) return;
 
-    // Cancel previous timer
-    if (loadTimer.current) {
-      clearTimeout(loadTimer.current);
-      loadTimer.current = null;
-    }
+  //     const parsed = JSON.parse(stored);
+  //     if (!Array.isArray(parsed) || parsed.length === 0) return;
 
-    console.log("Loading:", loadingUrl);
+  //     const sentCount = parsed.length;
+  //     const response = await postLoadDetails(parsed);
 
-    loadTimer.current = setTimeout(async () => {
-      // Ignore if another navigation has already started
-      if (currentLoadId !== loadId.current) {
-        return;
-      }
+  //     if (!isLoadDetailsPostSuccess(response)) return;
 
-      const network = await getNetworkInfo();
+  //     const latestStored = await AsyncStorage.getItem("loadDetails");
+  //     let remaining: Record<string, unknown>[] = [];
+  //     if (latestStored) {
+  //       const latestParsed = JSON.parse(latestStored);
+  //       if (Array.isArray(latestParsed)) {
+  //         remaining = latestParsed.slice(sentCount);
+  //       }
+  //     }
 
-      console.log("⚠️ WebView taking too long");
+  //     if (remaining.length === 0) {
+  //       await AsyncStorage.removeItem("loadDetails");
+  //     } else {
+  //       await AsyncStorage.setItem("loadDetails", JSON.stringify(remaining));
+  //     }
+  //     slowLoadMetrics.current = remaining;
+  //   } catch (e) {
+  //     console.log("Failed to sync loadDetails:", e);
+  //   } finally {
+  //     isSyncingLoadDetails.current = false;
+  //   }
+  // };
 
-      pendingSlowLoad.current = {
-        url: loadingUrl,
-        carrier: network.carrier,
-        connectionType: network.connectionType,
-        generation: network.generation,
-        isConnected: network.isConnected,
-        isInternetReachable: network.isInternetReachable,
-        time: getFormattedDateTime(),
-      };
-    }, 5000);
-  };
+  // const getFormattedDateTime = () => {
+  //   const now = new Date();
 
-  const handleLoadEnd = (event: any) => {
-    const endTime = Date.now();
+  //   const day = String(now.getDate()).padStart(2, "0");
+  //   const month = String(now.getMonth() + 1).padStart(2, "0");
+  //   const year = now.getFullYear();
 
-    let loadDuration = 0;
+  //   const time = now.toLocaleTimeString("en-IN", {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //     second: "2-digit",
+  //     hour12: true,
+  //   });
 
-    if (loadStartTime.current) {
-      loadDuration = endTime - loadStartTime.current;
-    }
+  //   return `${day}/${month}/${year} ${time}`;
+  // };
 
-    const loadSeconds = (loadDuration / 1000).toFixed(2);
+  // const handleLoadStart = (event: any) => {
+  //   const loadingUrl = event.nativeEvent.url;
 
-    console.log("WebView loaded successfully:", event.nativeEvent.url);
+  //   // New navigation
+  //   loadId.current += 1;
 
-    console.log("Load duration:", `${loadSeconds} seconds`);
+  //   const currentLoadId = loadId.current;
 
-    if (pendingSlowLoad.current) {
-      if (!Array.isArray(slowLoadMetrics.current)) {
-        slowLoadMetrics.current = [];
-      }
-      slowLoadMetrics.current.push({
-        ...pendingSlowLoad.current,
-        loadSeconds,
-      });
-      pendingSlowLoad.current = null;
-      console.log(slowLoadMetrics.current);
-      AsyncStorage.setItem(
-        "loadDetails",
-        JSON.stringify(slowLoadMetrics.current),
-      ).catch((e) => console.log("Failed to save loadDetails:", e));
-    }
+  //   // Store load start time
+  //   loadStartTime.current = Date.now();
+  //   pendingSlowLoad.current = null;
 
-    // Cancel timer
-    if (loadTimer.current) {
-      clearTimeout(loadTimer.current);
-      loadTimer.current = null;
-    }
+  //   // Cancel previous timer
+  //   if (loadTimer.current) {
+  //     clearTimeout(loadTimer.current);
+  //     loadTimer.current = null;
+  //   }
 
-    // Invalidate current timer
-    loadId.current += 1;
+  //   console.log("Loading:", loadingUrl);
 
-    // Reset
-    loadStartTime.current = null;
-  };
+  //   loadTimer.current = setTimeout(async () => {
+  //     // Ignore if another navigation has already started
+  //     if (currentLoadId !== loadId.current) {
+  //       return;
+  //     }
+
+  //     const network = await getNetworkInfo();
+
+  //     console.log("⚠️ WebView taking too long");
+
+  //     pendingSlowLoad.current = {
+  //       url: loadingUrl,
+  //       carrier: network.carrier,
+  //       connectionType: network.connectionType,
+  //       generation: network.generation,
+  //       isConnected: network.isConnected,
+  //       isInternetReachable: network.isInternetReachable,
+  //       time: getFormattedDateTime(),
+  //     };
+  //   }, 5000);
+  // };
+
+  // const handleLoadEnd = (event: any) => {
+  //   const endTime = Date.now();
+
+  //   let loadDuration = 0;
+
+  //   if (loadStartTime.current) {
+  //     loadDuration = endTime - loadStartTime.current;
+  //   }
+
+  //   const loadSeconds = (loadDuration / 1000).toFixed(2);
+
+  //   console.log("WebView loaded successfully:", event.nativeEvent.url);
+
+  //   console.log("Load duration:", `${loadSeconds} seconds`);
+
+  //   if (pendingSlowLoad.current) {
+  //     if (!Array.isArray(slowLoadMetrics.current)) {
+  //       slowLoadMetrics.current = [];
+  //     }
+  //     slowLoadMetrics.current.push({
+  //       ...pendingSlowLoad.current,
+  //       loadSeconds,
+  //     });
+  //     pendingSlowLoad.current = null;
+  //     console.log(slowLoadMetrics.current);
+  //     AsyncStorage.setItem(
+  //       "loadDetails",
+  //       JSON.stringify(slowLoadMetrics.current),
+  //     ).catch((e) => console.log("Failed to save loadDetails:", e));
+  //   }
+
+  //   // Cancel timer
+  //   if (loadTimer.current) {
+  //     clearTimeout(loadTimer.current);
+  //     loadTimer.current = null;
+  //   }
+
+  //   // Invalidate current timer
+  //   loadId.current += 1;
+
+  //   // Reset
+  //   loadStartTime.current = null;
+  // };
 
   const injectScript = `
 
@@ -1192,8 +1275,8 @@ export default function Webview() {
         textZoom={100}
         injectedJavaScript={injectScript}
         onMessage={handleWebViewMessage}
-        onLoadStart={handleLoadStart}
-        onLoadEnd={handleLoadEnd}
+        // onLoadStart={handleLoadStart}
+        // onLoadEnd={handleLoadEnd}
         onError={(e) => {
           const { description } = e.nativeEvent;
           // console.warn("WebView Error:", description);

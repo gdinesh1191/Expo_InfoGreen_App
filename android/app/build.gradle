@@ -94,8 +94,8 @@ android {
         applicationId 'com.igcloudbook.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-         versionCode 48
-        versionName "34.2.3"
+         versionCode 49
+        versionName "34.2.4"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
